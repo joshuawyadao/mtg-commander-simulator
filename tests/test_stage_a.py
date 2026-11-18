@@ -1,6 +1,7 @@
 from pathlib import Path
 import sys
 import tempfile
+import time
 import unittest
 
 from scripts.stage_a import GameResult, ProcessResult, fixture_metadata, parse_game, run_logged
@@ -11,7 +12,14 @@ HEADER = (
     "Ai(1)-Green Ramp vs Ai(2)-Red Aggro vs Ai(3)-Orzhov Midrange vs "
     "Ai(4)-Azorius Control - one game of Commander seed 42"
 )
-OUTCOMES = "\n".join(f"Game Outcome: Ai({seat})-{name} has lost" for seat, name in enumerate(DECKS, 1))
+OUTCOMES = "\n".join([
+    "Game Outcome: Match Duration 0m : 01s",
+    "Game Outcome: Turn 8",
+    "Game Outcome: Ai(1)-Green Ramp has lost",
+    "Game Outcome: Ai(2)-Red Aggro has won",
+    "Game Outcome: Ai(3)-Orzhov Midrange has lost",
+    "Game Outcome: Ai(4)-Azorius Control has lost",
+])
 WIN = "Game Result: Game 1 ended in 1234 ms. Ai(2)-Red Aggro has won!"
 DRAW = "Game Result: Game 1 ended in a Draw! Took 1234 ms."
 OK = ProcessResult(0, 2.0, 4096, False)
@@ -97,8 +105,20 @@ class LoggedProcessTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp)
             result = run_logged(
-                [sys.executable, "-c", "import time; print('started', flush=True); time.sleep(60)"],
+                [sys.executable, "-c", "import os, time; print(os.getpid(), flush=True); time.sleep(10)"],
                 output, output, "child", 1,
             )
             self.assertTrue(result.timed_out)
-            self.assertEqual((output / "child.stdout.log").read_text(), "started\n")
+            pid = int((output / "child.stdout.log").read_text())
+            status_file = Path(f"/proc/{pid}/stat")
+            deadline = time.monotonic() + 2
+            while True:
+                try:
+                    state = status_file.read_text().rsplit(")", 1)[1].split()[0]
+                except FileNotFoundError:
+                    break
+                if state == "Z":
+                    break
+                if time.monotonic() >= deadline:
+                    self.fail("The wrapped process was still running after its deadline")
+                time.sleep(0.02)

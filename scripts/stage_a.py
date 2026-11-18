@@ -21,6 +21,7 @@ PROCESS_DEADLINE_SECONDS = 720
 FIXTURE_DEADLINE_SECONDS = 120
 DRAW = re.compile(r"Game Result: Game 1 ended in a Draw! Took (\d+) ms\.")
 WIN = re.compile(r"Game Result: Game 1 ended in (\d+) ms\. (.+) has won!")
+PLAYER_OUTCOME = re.compile(r"^Game Outcome: Ai\(\d+\)-")
 FORGE_ERROR = re.compile(
     r"^(?:Could not load deck - |No deck found in |Deck is NULL|An unsupported card was requested:|"
     r"Uncaught exception in thread |Exception in thread |Caused by: |"
@@ -72,7 +73,8 @@ def parse_game(stdout, stderr, process, deck_names, seed):
     if lines.count(start) != 1:
         return GameResult("failed", reason="Missing or repeated setup for the expected Commander pod")
 
-    outcome_lines = [line for line in lines if line.startswith("Game Outcome: ")]
+    # Forge uses the same label for the match duration, turn count, and player results.
+    outcome_lines = [line for line in lines if PLAYER_OUTCOME.match(line)]
     if len(outcome_lines) != len(seats) or any(
         sum(line.startswith(f"Game Outcome: {seat} ") for line in outcome_lines) != 1
         for seat in seats
