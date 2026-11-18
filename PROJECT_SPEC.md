@@ -62,10 +62,10 @@ Forge Headless Simulation
 Python Results Parser
     |
     v
-CSV / JSON / Markdown Reports
+CSV / JSON / Markdown Reports + Raw Logs
     |
     v
-GitHub Actions Artifacts
+GitHub Actions Artifacts + Markdown Run Archive
 ```
 
 ### Technology Choices
@@ -79,7 +79,7 @@ GitHub Actions Artifacts
 | Results processing | Python |
 | Configuration | YAML |
 | Output | CSV, JSON, Markdown |
-| Storage | GitHub Actions artifacts |
+| Storage | GitHub Actions artifacts and a Git-tracked Markdown run archive |
 
 Do not introduce a database, frontend, API server, or container orchestration unless a concrete technical requirement emerges.
 
@@ -95,6 +95,9 @@ mtg-commander-simulator/
 │   ├── aggro.dck
 │   ├── midrange.dck
 │   └── control.dck
+├── reports/
+│   └── runs/
+│       └── <run-id>/attempt-<attempt>/summary.md
 ├── scripts/
 │   ├── setup_forge.sh
 │   ├── run_simulation.py
@@ -166,6 +169,7 @@ Requirements:
 - Configurable game count, initially limited to ten
 - Job and process timeouts
 - Downloadable reports and logs
+- A Git-tracked Markdown summary for each batch attempt that produces one
 - Minimal GitHub token permissions
 - No unnecessary paid infrastructure
 
@@ -173,6 +177,7 @@ Requirements:
 - A user can launch a batch from GitHub Actions.
 - Simulations run entirely on GitHub-hosted resources.
 - Results are downloadable.
+- A run and its rerun appear in separate folders in the Markdown archive.
 - Failed runs provide actionable diagnostics.
 - The workflow stays within the intended free-resource limits.
 
@@ -233,6 +238,18 @@ The implementation must translate configuration into the actual supported Forge 
 - Runtime
 - Failure reason, if applicable
 - Simulation engine version
+
+### Markdown Run Report
+
+- **Run summary.** Record the start time with time zone, run ID and attempt, workflow run URL, source commit, Forge and Java versions, settings, total runtime, and counts of attempted games, completions, draws, timeouts, and failures.
+- **Deck results.** Record each deck's name, version, archetype, AI profile, completed games played, wins, losses, draws, and win rate. Divide wins by completed games played and show the rate as unavailable when that count is zero. Highlight a designated test deck when the configuration includes one.
+- **Game results.** Record the seats, seed, runtime, and winner, draw, timeout, or failure for each attempt. Include the path of each available raw log within the downloadable artifact.
+
+### Run Archive
+
+Archive the Markdown summary at `reports/runs/<run-id>/attempt-<attempt>/summary.md` in Git. Use the GitHub Actions run ID and attempt number so each rerun has its own record. Preserve earlier summaries and save partial or failed-run summaries whenever they are generated.
+
+Upload the Markdown summary, CSV and JSON exports, and available raw logs together as a GitHub Actions artifact. Git retains the Markdown record beyond the Actions retention window. In Stage C, give only the archive job repository write access. [Run archive guide](reports/runs/README.md)
 
 ### Future Metrics
 
@@ -379,7 +396,7 @@ Do not automatically proceed to advanced deck analytics or optimization.
 
 ### Project Definition of Done
 
-The generic PoC is complete when a public GitHub repository contains a reproducible, manually triggered GitHub Actions workflow capable of running ten Forge Commander games and producing downloadable, trustworthy results.
+The generic PoC is complete when a public GitHub repository contains a reproducible, manually triggered GitHub Actions workflow capable of running ten Forge Commander games and producing downloadable, trustworthy results. The reference run must have a Markdown summary in the run archive.
 
 ---
 

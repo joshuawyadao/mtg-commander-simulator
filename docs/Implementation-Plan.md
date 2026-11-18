@@ -9,10 +9,10 @@ Define a durable Markdown results archive and give it a visible location in the 
 
 ## Action items
 
-- [ ] Confirm how the current specification handles reports, artifacts, and the proof of concept's completion criteria.
-- [ ] Define how the Markdown report is named and retained across workflow runs and reruns in `PROJECT_SPEC.md`.
-- [ ] Add an archive guide under `reports/runs/` and link it from the repository README.
-- [ ] Check that the specification, archive guide, and README agree, that their local links resolve, and that the diff contains documentation only. This change adds no executable behavior and needs no automated test files.
+- [x] Confirm how the current specification handles reports, artifacts, and the proof of concept's completion criteria.
+- [x] Define how the Markdown report is named and retained across workflow runs and reruns in `PROJECT_SPEC.md`.
+- [x] Add an archive guide under `reports/runs/` and link it from the repository README.
+- [x] Check that the specification, archive guide, and README agree, that their local links resolve, and that the diff contains documentation only. This change adds no executable behavior and needs no automated test files.
 - Publish `main` and confirm the remote commit matches the local commit.
 
 ## Open questions
