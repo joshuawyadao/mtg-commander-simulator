@@ -1,20 +1,19 @@
 # Plan
 
-Create a public GitHub repository for the MTG Commander Simulation Framework and publish the specification and Stage A feasibility review as the initial project documentation.
+Define a durable Markdown results archive and give it a visible location in the repository before simulation work begins.
 
 ## Scope
 
-- **In scope** · Local Git checkout, public repository, original v0.1 project specification, Stage A findings and smoke test plan, and a short README.
-- **Later stages** · Forge setup, test deck fixtures, simulation code, workflow implementation, and game execution.
+- **In scope** · The archive path, project reporting requirements, an archive guide, and a link from the README.
+- **Later stages** · Generating reports, publishing them from GitHub Actions, and executing simulations.
 
 ## Action items
 
-- [x] Confirm the workspace, GitHub account, and repository name proposed in the specification.
-- [x] Save the supplied specification verbatim as `PROJECT_SPEC.md`.
-- [x] Record the source-backed feasibility findings and the one-game validation plan in `docs/Stage-A-Feasibility.md`.
-- [x] Link both documents from `README.md` and state the current project status.
-- [x] Compare the saved specification with the attachment, check the documentation links and staged changes, and confirm that the commit contains project documentation only. This change adds no executable behavior and needs no automated test files.
-- Publish `main` to `joshuawyadao/mtg-commander-simulator` and verify the public visibility and remote commit after pushing.
+- [ ] Confirm how the current specification handles reports, artifacts, and the proof of concept's completion criteria.
+- [ ] Define how the Markdown report is named and retained across workflow runs and reruns in `PROJECT_SPEC.md`.
+- [ ] Add an archive guide under `reports/runs/` and link it from the repository README.
+- [ ] Check that the specification, archive guide, and README agree, that their local links resolve, and that the diff contains documentation only. This change adds no executable behavior and needs no automated test files.
+- Publish `main` and confirm the remote commit matches the local commit.
 
 ## Open questions
 
