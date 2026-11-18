@@ -2,7 +2,7 @@
 
 A framework for running four-player Magic: The Gathering Commander games with Forge AI and collecting results on GitHub Actions. The first milestone is a single headless game on a hosted Ubuntu runner. The proof of concept expands that to ten games with downloadable reports and logs.
 
-Stage A validates one fixed four-player pod using Forge 2.0.16 and Temurin 17 on GitHub-hosted Ubuntu.
+Stage A passed on GitHub-hosted Ubuntu with Forge 2.0.16 and Temurin 17. Azorius Control won the four-player game with seed 42. [Hosted verification and evidence](docs/Stage-A-Feasibility.md#hosted-verification)
 
 - [Project specification v0.1](PROJECT_SPEC.md)
 - [Stage A feasibility review and smoke test plan](docs/Stage-A-Feasibility.md)

@@ -9,12 +9,13 @@ Validate Stage A by running one headless four-player Commander game on GitHub-ho
 
 ## Action items
 
-- [ ] Pin and verify the Forge desktop archive, Java distribution and build, and GitHub Actions runner and dependencies.
-- [ ] Create four Forge-native decks and verify card resolution, deck sizes, color identity, singleton rules, and commander eligibility.
-- [ ] Add a single-game runner that records the command, inputs, raw logs, timings, memory, and process result. Require positive evidence of the expected pod and winner, and preserve diagnostics on failure.
-- [ ] Add focused tests for fixture validation and unambiguous winner, draw, timeout, and error handling. Check shell and workflow syntax and run the tests locally.
-- [ ] Run the one-game job on the feature branch before opening a PR. Use a temporary branch-only push trigger because manual dispatch requires the workflow on the default branch. Inspect the downloadable evidence and remove the temporary trigger for the final PR.
-- [ ] Document launch, evidence, troubleshooting, and the observed result. Publish the branch and shepherd the PR through review and relevant checks.
+- [x] Pin and verify the Forge desktop archive, Java distribution and build, and GitHub Actions runner and dependencies.
+- [x] Create four Forge-native decks and verify card resolution, deck sizes, color identity, singleton rules, and commander eligibility.
+- [x] Add a single-game runner that records the command, inputs, raw logs, timings, memory, and process result. Require positive evidence of the expected pod and winner, and preserve diagnostics on failure.
+- [x] Add focused tests for fixture validation and unambiguous winner, draw, timeout, and error handling. Check shell and workflow syntax and run the tests locally.
+- [x] Run the one-game job on the feature branch before opening a PR. Inspect the downloadable evidence and remove the temporary branch trigger.
+- [x] Document launch, evidence, troubleshooting, and the observed result. [Hosted verification](Stage-A-Feasibility.md#hosted-verification)
+- Publish the branch and shepherd the PR through review and relevant checks.
 
 ## Open questions
 
