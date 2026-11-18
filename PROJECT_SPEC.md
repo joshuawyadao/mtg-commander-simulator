@@ -1,0 +1,386 @@
+# MTG Commander Simulation Framework
+## Project Specification — v0.1
+
+**Status:** Planning complete; implementation not started  
+**Target environment:** Public GitHub repository + GitHub Actions  
+**Primary technologies:** Java, Forge MTG, Python  
+**Development workflow:** Codex  
+**Initial milestone:** Generic 10-game Commander simulation proof of concept
+
+---
+
+## 1. Project Overview
+
+Build a reusable, automated Magic: The Gathering Commander simulation framework using the open-source Forge rules engine.
+
+The framework should accept Commander decklists, run AI-versus-AI games without a graphical interface, and produce structured reports.
+
+The initial goal is to validate the simulation infrastructure, not optimize any particular deck.
+
+Eventually, the framework should support comparing deck versions, evaluating different playstyles, and identifying weaknesses in deck construction.
+
+### Guiding Principles
+
+- Reuse Forge's existing MTG rules engine.
+- Avoid implementing MTG rules from scratch.
+- Keep the infrastructure independent of deck archetype.
+- Run simulations remotely to avoid consuming the user's MacBook resources.
+- Prefer free infrastructure and open-source software.
+- Prioritize reproducibility and reliable results.
+- Keep the first implementation intentionally small.
+- Never confuse AI simulation performance with actual human multiplayer performance.
+
+## 2. Proof-of-Concept Goal
+
+Given four valid Commander decklists, automatically run ten multiplayer Commander games using Forge on GitHub Actions.
+
+Generate a report containing:
+
+- Number of games attempted and completed
+- Winning deck for each completed game
+- Total and per-game execution time
+- Errors, crashes, and timeouts
+- Forge version and simulation configuration
+- Raw logs for debugging
+
+The entire process should run without requiring the user's MacBook to execute simulations.
+
+## 3. Architecture
+
+```text
+GitHub Repository
+    |
+    | Decklists + Configuration
+    v
+GitHub Actions (Manual Trigger)
+    |
+    v
+Forge Headless Simulation
+    |
+    | Game Logs + Results
+    v
+Python Results Parser
+    |
+    v
+CSV / JSON / Markdown Reports
+    |
+    v
+GitHub Actions Artifacts
+```
+
+### Technology Choices
+
+| Component | Technology |
+|---|---|
+| Version control | GitHub |
+| CI / Cloud execution | GitHub Actions |
+| MTG rules engine | Forge |
+| Game automation | Python / Shell |
+| Results processing | Python |
+| Configuration | YAML |
+| Output | CSV, JSON, Markdown |
+| Storage | GitHub Actions artifacts |
+
+Do not introduce a database, frontend, API server, or container orchestration unless a concrete technical requirement emerges.
+
+## 4. Proposed Repository Structure
+
+```text
+mtg-commander-simulator/
+├── .github/
+│   └── workflows/
+│       └── simulate.yml
+├── decks/
+│   ├── ramp.dck
+│   ├── aggro.dck
+│   ├── midrange.dck
+│   └── control.dck
+├── scripts/
+│   ├── setup_forge.sh
+│   ├── run_simulation.py
+│   └── parse_results.py
+├── tests/
+│   └── test_parser.py
+├── config.yaml
+├── README.md
+└── PROJECT_SPEC.md
+```
+
+This structure is provisional and may be adjusted after inspecting Forge's actual requirements.
+
+## 5. Implementation Stages
+
+### Stage A — Forge Feasibility
+
+Research and verify:
+
+1. Forge's current supported Java version.
+2. Official release and download mechanisms.
+3. Headless simulation command syntax.
+4. Commander deck import format.
+5. Multiplayer AI support.
+6. Logging and result-output capabilities.
+7. Supported operating systems and resource requirements.
+
+Then run one headless Commander game using four supported decks.
+
+**Acceptance criteria:**
+- Forge launches without a GUI.
+- All four decks load successfully.
+- The game completes or produces a diagnosable failure.
+- A winner can be identified from a successful game.
+- Logs are retained.
+
+### Stage B — Ten-Game Batch
+
+Create a reusable script that:
+
+1. Accepts deck paths and a requested game count.
+2. Validates basic configuration.
+3. Launches Forge.
+4. Detects failures and timeouts.
+5. Parses available results.
+6. Produces CSV, JSON, and Markdown summaries.
+
+The system must distinguish completed games from failed or timed-out games.
+
+Do not fabricate results or silently count failures as losses.
+
+**Acceptance criteria:**
+- Ten games can be requested.
+- Each game is accounted for.
+- Completed games have identifiable results.
+- Failed games have diagnostic information.
+- Reports can be generated automatically.
+
+### Stage C — GitHub Actions
+
+Create a manually triggered GitHub Actions workflow.
+
+Requirements:
+
+- Standard Ubuntu hosted runner
+- Pinned Java and Forge versions
+- No persistent server
+- No automatic scheduled execution
+- Configurable game count, initially limited to ten
+- Job and process timeouts
+- Downloadable reports and logs
+- Minimal GitHub token permissions
+- No unnecessary paid infrastructure
+
+**Acceptance criteria:**
+- A user can launch a batch from GitHub Actions.
+- Simulations run entirely on GitHub-hosted resources.
+- Results are downloadable.
+- Failed runs provide actionable diagnostics.
+- The workflow stays within the intended free-resource limits.
+
+## 6. Initial Test Decks
+
+Use four simple, AI-friendly Commander archetypes.
+
+| Archetype | Purpose |
+|---|---|
+| Mono-green creature ramp | Mana development and creature combat |
+| Mono-red aggro | Early pressure and combat |
+| White-black midrange | Removal and incremental value |
+| Blue-white control | Interaction and longer games |
+
+These are placeholders, not finalized decklists.
+
+Select actual commanders and lists only after verifying Forge support.
+
+Prefer straightforward cards and avoid complicated combos in the initial PoC.
+
+## 7. Simulation Configuration
+
+The configuration should eventually support:
+
+```yaml
+simulation:
+  format: commander
+  games: 10
+  players: 4
+  timeout_minutes: 10
+
+decks:
+  - decks/ramp.dck
+  - decks/aggro.dck
+  - decks/midrange.dck
+  - decks/control.dck
+
+reporting:
+  formats:
+    - csv
+    - json
+    - markdown
+  retain_logs: true
+```
+
+This YAML is an illustrative target interface, not a confirmed Forge-native configuration format.
+
+The implementation must translate configuration into the actual supported Forge command-line arguments.
+
+## 8. Required Reporting
+
+### Minimum Metrics
+
+- Game identifier
+- Deck names
+- Winner
+- Completion status
+- Runtime
+- Failure reason, if applicable
+- Simulation engine version
+
+### Future Metrics
+
+- Commander casting turn
+- Land and mana development
+- Creatures and tokens on battlefield
+- Damage dealt and received
+- Card draw
+- Board-wipe recovery
+- Turn of elimination
+- Combat versus noncombat wins
+
+Do not implement future metrics until their availability through Forge logs or instrumentation has been verified.
+
+## 9. Technical Risks
+
+### Forge AI Quality
+
+Forge's AI may struggle with complicated Commander strategies.
+
+Mitigation:
+- Start with simple archetypes.
+- Inspect representative game logs.
+- Avoid treating simulated win rates as authoritative.
+
+### Card Compatibility
+
+Some cards may have incomplete or unsupported implementations.
+
+Mitigation:
+- Validate card availability.
+- Record unsupported cards.
+- Use known-supported decks for the initial PoC.
+
+### Logging Limitations
+
+Forge may not expose every desired metric.
+
+Mitigation:
+- Start with basic game outcomes.
+- Investigate instrumentation only after the generic PoC works.
+
+### Runtime and Resource Usage
+
+Multiplayer Commander games may be computationally expensive.
+
+Mitigation:
+- Start with one game.
+- Scale to ten only after successful validation.
+- Apply timeouts.
+- Measure memory and runtime.
+- Avoid unbounded parallel execution.
+
+### Reproducibility
+
+AI behavior and random draws can introduce variance.
+
+Mitigation:
+- Pin Forge versions.
+- Record decklist versions.
+- Record simulation configuration.
+- Investigate whether deterministic seeds are supported.
+- Preserve relevant logs.
+
+## 10. Explicitly Out of Scope
+
+The initial PoC must not include:
+
+- Custom MTG rules implementation
+- Custom AI strategy engine
+- Automated deck optimization
+- Automatic card substitutions
+- Web dashboard
+- Database
+- Cloud server
+- Scheduled simulation jobs
+- King of the Oathbreakers-specific logic
+- Complex archetype-specific analytics
+
+These features may be considered after validating the generic infrastructure.
+
+## 11. Future Roadmap
+
+### Phase 1 — Generic PoC
+Run ten Commander games in GitHub Actions.
+
+### Phase 2 — Multi-Archetype Validation
+Evaluate whether the framework works with different deck strategies.
+
+### Phase 3 — Detailed Telemetry
+Collect board state, token generation, combat, and resource-development metrics.
+
+### Phase 4 — Deck Version Comparison
+Compare two versions against consistent opponents and configurations.
+
+### Phase 5 — Strategic Evaluation
+Investigate AI decision quality and deck-specific playstyle metrics.
+
+### Phase 6 — Optional Optimization
+Suggest card changes based on collected evidence, with human approval before modifying decklists.
+
+## 12. Initial Target Deck
+
+The eventual first real-world project is:
+
+**King of the Oathbreakers — Version 1.1**
+
+Format: Commander  
+Target power: Bracket 2  
+Colors: White / Black  
+Strategy: Spirit tribal, phasing, token generation, resource conversion, and combat finishers.
+
+Preferred playstyle:
+- Steady board development
+- Defensive flying creatures
+- Token doublers
+- Sacrifice outlets for temporary mana acceleration
+- Large finishing combat attacks
+- No intentional infinite combos
+- No sacrifice-drain-focused win condition
+
+This deck is not part of the generic PoC.
+
+Its existing list should be independently validated before later importing it.
+
+## 13. Instructions for Codex
+
+When beginning implementation:
+
+1. Read this specification completely.
+2. Research Forge's current documentation and repository.
+3. Confirm that the proposed architecture is technically feasible.
+4. Identify unsupported assumptions before writing implementation code.
+5. Present any necessary architecture changes.
+6. Implement Stage A first.
+7. Validate Stage A before proceeding to Stage B.
+8. Validate Stage B before proceeding to Stage C.
+9. Add automated tests for result parsing and failure handling.
+10. Document setup, operation, limitations, and troubleshooting.
+
+**Do not claim simulations succeeded unless actual game results and logs confirm completion.**
+
+Do not automatically proceed to advanced deck analytics or optimization.
+
+### Project Definition of Done
+
+The generic PoC is complete when a public GitHub repository contains a reproducible, manually triggered GitHub Actions workflow capable of running ten Forge Commander games and producing downloadable, trustworthy results.
+
+---
+
+**Project status:** Ready for technical feasibility validation and staged implementation.
