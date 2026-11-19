@@ -1,21 +1,21 @@
 # Plan
 
-Validate Stage A by running one headless four-player Commander game on GitHub-hosted Ubuntu and retaining evidence of the four seats and winner.
+Turn the verified Stage A game into a reusable four-player Commander batch and verify ten attempts on hosted Ubuntu.
 
 ## Scope
 
-- **In scope** · Four Commander fixtures, pinned Forge and Java setup, a single-game runner, a hosted workflow, evidence review, and a pull request.
-- **Later stages** · Batch scheduling, full CSV and JSON reports, deck comparison, and automatic report archiving.
+- Stage B includes a Python CLI, four Forge-native decks per run, sequential execution, CSV, JSON and Markdown reports, automated tests, and one hosted verification run.
+- Stage C delivers the permanent workflow and Git archive described in the reporting requirements.
 
 ## Action items
 
-- [x] Pin and verify the Forge desktop archive, Java distribution and build, and GitHub Actions runner and dependencies.
-- [x] Create four Forge-native decks and verify card resolution, deck sizes, color identity, singleton rules, and commander eligibility.
-- [x] Add a single-game runner that records the command, inputs, raw logs, timings, memory, and process result. Require positive evidence of the expected pod and winner, and preserve diagnostics on failure.
-- [x] Add focused tests for fixture validation and unambiguous winner, draw, timeout, and error handling. Check shell and workflow syntax and run the tests locally.
-- [x] Run the one-game job on the feature branch before opening a PR. Inspect the downloadable evidence and remove the temporary branch trigger.
-- [x] Document launch, evidence, troubleshooting, and the observed result. [Hosted verification](Stage-A-Feasibility.md#hosted-verification)
-- Publish the branch and shepherd the PR through review and relevant checks.
+- [ ] Reuse the pinned Forge setup, Java deck validation, process logging, and result parsing from Stage A. Preserve the single-game smoke command and evidence format.
+- [ ] Add a batch CLI for deck paths, game count, seed, and deadlines. Validate a staged copy of each deck, then run one isolated Forge process per game and keep raw diagnostics for each attempt.
+- [ ] Generate the three report formats from the same result records. Report verified wins, genuine draws, timeouts, and failures individually, and exclude timeouts and failures from deck win rates.
+- [ ] Test invalid configuration, mixed results, setup failure, and report consistency. Run the targeted batch suite, full unittest discovery, shell syntax check, and diff checks.
+- [ ] Document the command, report outputs, and troubleshooting in the README. Update the specification and hosted evidence after the ten-game run.
+- [ ] Verify ten attempts on hosted Ubuntu with the pinned toolchain. Download and reconcile the reports against the raw game logs.
+- [ ] Preserve the verification evidence, publish the branch, and shepherd the pull request through review and CI.
 
 ## Open questions
 
