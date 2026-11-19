@@ -30,6 +30,15 @@ FORGE_ERROR = re.compile(
     r"[ \t]+at [\w.$/]+\([^\n]+\))",
     re.MULTILINE,
 )
+STACK_FRAMES = r"(?:\n[ \t]+at [^\n]+)*"
+AI_TIMEOUT_SAMPLE = re.compile(r"^AI eval thread at timeout:" + STACK_FRAMES + "$", re.MULTILINE)
+AI_TIMEOUT_TRACE = re.compile(
+    r"^java\.util\.concurrent\.TimeoutException\n"
+    r"[ \t]+at java\.base/java\.util\.concurrent\.FutureTask\.get\([^\n]+\)\n"
+    r"[ \t]+at forge\.ai\.AiController\.chooseSpellAbilitiesToPlayFromList\([^\n]+\)"
+    + STACK_FRAMES + "$",
+    re.MULTILINE,
+)
 
 
 @dataclass(frozen=True)
@@ -60,13 +69,22 @@ def forge_error(stdout, stderr):
     return None
 
 
+def simulation_error(stdout, stderr):
+    # Forge catches this AI choice timeout and emits a companion profiling sample.
+    gameplay_log, samples = AI_TIMEOUT_SAMPLE.subn("", stdout)
+    error_log, traces = AI_TIMEOUT_TRACE.subn("", stderr)
+    if samples and traces == samples:
+        return forge_error(gameplay_log, error_log)
+    return forge_error(stdout, stderr)
+
+
 def parse_game(stdout, stderr, process, deck_names, seed):
     lines = stdout.splitlines()
     if process.timed_out or "Stopping slow match as draw" in lines:
         reason = "Java process deadline exceeded" if process.timed_out else "Forge game clock expired"
         return GameResult("timeout", reason=reason)
 
-    diagnostic = forge_error(stdout, stderr)
+    diagnostic = simulation_error(stdout, stderr)
     if diagnostic or process.returncode != 0:
         return GameResult("failed", reason=diagnostic or f"Java exited with status {process.returncode}")
 
