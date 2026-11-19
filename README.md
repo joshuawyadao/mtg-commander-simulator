@@ -1,6 +1,6 @@
 # MTG Commander Simulation Framework
 
-A framework for running four-player Magic: The Gathering Commander games with Forge AI and collecting results on GitHub Actions. The first milestone is a single headless game on a hosted Ubuntu runner. The proof of concept expands that to ten games with downloadable reports and logs.
+A framework for running four-player Magic: The Gathering Commander games with Forge AI. Stage B verified a ten-game batch on GitHub-hosted Ubuntu and produced downloadable reports and logs. [Stage B hosted verification](docs/Stage-B-Verification.md)
 
 Stage A passed on GitHub-hosted Ubuntu with Forge 2.0.16 and Temurin 17. Azorius Control won the four-player game with seed 42. [Hosted verification and evidence](docs/Stage-A-Feasibility.md#hosted-verification)
 

@@ -14,9 +14,9 @@ Turn the verified Stage A game into a reusable four-player Commander batch and v
 - [x] Generate the three report formats from the same result records. Report verified wins, genuine draws, timeouts, and failures individually, and exclude timeouts and failures from deck win rates.
 - [x] Test invalid configuration, mixed results, setup failure, and report consistency. Run the targeted batch suite, full unittest discovery, shell syntax check, and diff checks.
 - [x] Fix the recovered AI decision timeout misclassified by the first hosted batch. Replay the captured game 8 logs and test that genuine game timeouts and unrelated exceptions still fail.
-- [ ] Document the command, report outputs, and troubleshooting in the README. Update the specification and hosted evidence after the ten-game run.
-- [ ] Verify ten attempts on hosted Ubuntu with the pinned toolchain. Download and reconcile the reports against the raw game logs.
-- [ ] Preserve the verification evidence, publish the branch, and shepherd the pull request through review and CI.
+- [x] Document the command, report outputs, and troubleshooting in the README. Update the specification and hosted evidence after the ten-game run.
+- [x] Verify ten attempts on hosted Ubuntu with the pinned toolchain. Download and reconcile the reports against the raw game logs. [Hosted verification](Stage-B-Verification.md)
+- [x] Record the hosted evidence and restore the one-game dispatch before publishing the pull request.
 
 ## Open questions
 

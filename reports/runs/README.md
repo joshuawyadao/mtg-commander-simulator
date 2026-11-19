@@ -10,4 +10,4 @@ Open the folder for a workflow run ID, then choose its attempt number. A rerun k
 
 Each summary records the run settings, per-deck results, and per-game outcomes. For CSV and JSON exports and raw logs, open the Actions run linked in the summary and download its artifact during the configured retention window. The Markdown summary stays in Git. [GitHub Actions artifact retention](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/remove-workflow-artifacts)
 
-The archive will be populated when the batch workflow runs. [Reporting requirements](../../PROJECT_SPEC.md#8-required-reporting) · [Stage A smoke-test evidence](../../docs/Stage-A-Feasibility.md#hosted-verification)
+Stage C adds automatic archiving. [Reporting requirements](../../PROJECT_SPEC.md#8-required-reporting) · [Stage B hosted verification](../../docs/Stage-B-Verification.md)
