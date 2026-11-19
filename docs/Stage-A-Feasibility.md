@@ -1,6 +1,6 @@
 # Stage A feasibility review
 
-Forge 2.0.16 provides a source-backed path to a headless four-player Commander game. The milestone is to confirm that the packaged release can load four legal decks and produce a verifiable result on a GitHub-hosted Ubuntu runner. The findings below come from the release, tagged source, and GitHub documentation. Startup and gameplay on the hosted runner are pending.
+Forge 2.0.16 loaded four legal Commander decks and produced a verifiable winner on GitHub-hosted Ubuntu. The source findings and the completed run evidence are recorded below.
 
 ## Findings
 
@@ -17,6 +17,23 @@ Forge 2.0.16 provides a source-backed path to a headless four-player Commander g
 3. Add a minimal manual smoke test job with isolated Forge data directories and read-only repository permissions. Start with a fixed seed, full logs, a 600-second game clock, and longer process and job deadlines. Reserve job time for uploading the logs.
 4. Run one four-seat game. Save stdout, stderr, process status, wall time, peak memory, Forge and Java versions, the seed, and deck hashes. Retain available diagnostics if the run fails.
 5. Verify that the four expected decks entered a Commander game and that its terminal result maps a winner to one of those decks. Record genuine draws, timeouts, and failures separately. A verified four-player game with a winner gates Stage B.
+
+## Hosted verification
+
+[GitHub Actions run 44415927221](https://github.com/joshuawyadao/mtg-commander-simulator/actions/runs/44415927221) passed on revision `1fa7dfd`. Forge validated all four decks and logged an outcome for each expected seat. The terminal result identified **Azorius Control**, led by **Isperia, Supreme Judge**, as the winner.
+
+| Setting or measurement | Observed value |
+|---|---|
+| Runner and engine | Ubuntu 24.04, Forge 2.0.16, Temurin 17.0.21+9 |
+| Pod | Green Ramp, Red Aggro, Orzhov Midrange, Azorius Control |
+| Seed | `42` |
+| Forge game duration | 24.297 s |
+| Simulation process wall time | 30.001 s |
+| Simulation process peak RSS | 1,130,084 KiB |
+
+The [evidence artifact](https://github.com/joshuawyadao/mtg-commander-simulator/actions/runs/44415927221/artifacts/14479487796) contains deck hashes, commands, and raw logs. The downloaded evidence confirmed all four hashes match the checked-in decks. An earlier run exposed Forge's shared label for player outcomes, duration, and turn count. The corrected parser accepted that run's raw log and passed the repeated hosted test. [Earlier run](https://github.com/joshuawyadao/mtg-commander-simulator/actions/runs/44415532267)
+
+The workflow used a temporary feature-branch trigger for this verification. The committed workflow runs the game on manual dispatch after merge, and pull requests run the lightweight checks.
 
 ## Implications for later stages
 
