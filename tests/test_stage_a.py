@@ -23,6 +23,13 @@ OUTCOMES = "\n".join([
 WIN = "Game Result: Game 1 ended in 1234 ms. Ai(2)-Red Aggro has won!"
 DRAW = "Game Result: Game 1 ended in a Draw! Took 1234 ms."
 OK = ProcessResult(0, 2.0, 4096, False)
+AI_TIMEOUT_SAMPLE = "AI eval thread at timeout:\n\tat app//forge.card.CardType.hasSubtype(CardType.java:400)"
+AI_TIMEOUT_STACK = (
+    "java.util.concurrent.TimeoutException\n"
+    "\tat java.base/java.util.concurrent.FutureTask.get(FutureTask.java:204)\n"
+    "\tat forge.ai.AiController.chooseSpellAbilitiesToPlayFromList(AiController.java:2930)\n"
+    "\tat forge.game.Match.startGame(Match.java:92)"
+)
 
 
 class GameResultTests(unittest.TestCase):
@@ -45,6 +52,28 @@ class GameResultTests(unittest.TestCase):
         result = self.parse(process=ProcessResult(-9, 12, None, True))
         self.assertEqual((result.status, result.winner), ("timeout", None))
         self.assertIn("process deadline", result.reason)
+
+    def test_accepts_winner_after_a_recovered_ai_decision_timeout(self):
+        result = self.parse(f"{AI_TIMEOUT_SAMPLE}\n{WIN}", stderr=AI_TIMEOUT_STACK)
+        self.assertEqual(result, GameResult("won", "Red Aggro", 1234))
+
+    def test_recovered_ai_decision_timeout_still_requires_a_terminal_result(self):
+        result = self.parse(AI_TIMEOUT_SAMPLE, stderr=AI_TIMEOUT_STACK)
+        self.assertEqual(result.status, "failed")
+        self.assertIn("terminal game result", result.reason)
+
+    def test_recovered_ai_decision_timeout_does_not_hide_other_exceptions(self):
+        stderr = f"{AI_TIMEOUT_STACK}\nException in thread \"main\" java.lang.IllegalStateException: broken"
+        result = self.parse(f"{AI_TIMEOUT_SAMPLE}\n{WIN}", stderr=stderr)
+        self.assertEqual(result.status, "failed")
+        self.assertIn("IllegalStateException", result.reason)
+
+    def test_unpaired_ai_timeout_trace_remains_a_failure(self):
+        self.assertEqual(self.parse(stderr=AI_TIMEOUT_STACK).status, "failed")
+
+    def test_game_clock_still_expires_after_a_recovered_ai_decision_timeout(self):
+        log = f"{AI_TIMEOUT_SAMPLE}\nStopping slow match as draw\n{DRAW}"
+        self.assertEqual(self.parse(log, stderr=AI_TIMEOUT_STACK).status, "timeout")
 
     def test_fails_on_explicit_error_even_when_forge_exits_zero(self):
         for diagnostic in (
