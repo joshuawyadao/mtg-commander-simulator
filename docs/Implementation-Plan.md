@@ -9,9 +9,9 @@ Publish the verified Stage B batch runner as a manual GitHub Actions workflow an
 
 ## Action items
 
-- [ ] Add the manual workflow with pinned Ubuntu tooling, input validation before Forge setup, and timeouts that preserve time to upload evidence.
-- [ ] Upload the reports and logs for each attempt, including failed batches. Give a separate archive job permission to publish only the generated Markdown summary.
-- [ ] Write reports to the existing run ID and attempt paths. Test idempotency, existing summary protection, missing summaries, and concurrent Git pushes with disposable repositories.
+- [x] Add the manual workflow with pinned Ubuntu tooling, input validation before Forge setup, and timeouts that preserve time to upload evidence.
+- [x] Upload the reports and logs for each attempt, including failed batches. Give a separate archive job permission to publish only the generated Markdown summary.
+- [x] Write reports to the existing run ID and attempt paths. Test idempotency, existing summary protection, missing summaries, and concurrent Git pushes with disposable repositories.
 - [ ] Check workflow syntax and run the full unittest suite. Rehearse the ten-game path, reruns, and failure handling on hosted Ubuntu using an isolated archive branch.
 - [ ] Document dispatch, reruns and artifact retention in the README and archive guide. Record the hosted evidence in the specification and verification notes.
 - [ ] Publish the feature branch and open the pull request for CI and review.

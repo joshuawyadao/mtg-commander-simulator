@@ -1,0 +1,112 @@
+name: Commander batch simulation
+run-name: Commander batch · ${{ inputs.games }} requested
+
+on:
+  workflow_dispatch:
+    inputs:
+      games:
+        description: Number of games (1 to 10)
+        required: true
+        type: number
+        default: 10
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  ARCHIVE_BRANCH: ${{ github.event.repository.default_branch }}
+
+jobs:
+  simulate:
+    name: Run Commander batch
+    runs-on: ubuntu-24.04
+    # Ten 12-minute process deadlines leave 20 minutes for setup and reporting.
+    timeout-minutes: 140
+    outputs:
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+      summary-attempt: ${{ steps.summary.outputs.attempt }}
+    env:
+      GAMES: ${{ inputs.games }}
+      TEMURIN_VERSION: '17.0.21+9'
+    steps:
+      - name: Prepare evidence and validate dispatch
+        run: |
+          EVIDENCE_DIR="$RUNNER_TEMP/commander-batch-evidence"
+          mkdir -p -- "$EVIDENCE_DIR"
+          printf 'EVIDENCE_DIR=%s\n' "$EVIDENCE_DIR" >> "$GITHUB_ENV"
+          printf 'Commit: %s\nRun ID: %s\nAttempt: %s\nRunner OS: %s\nRequested games: %s\n' \
+            "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$RUNNER_OS" "$GAMES" > "$EVIDENCE_DIR/run.txt"
+          if [[ "$GITHUB_REF" != "refs/heads/$ARCHIVE_BRANCH" ]]; then
+            printf 'Select the %s branch to run and archive a batch.\n' "$ARCHIVE_BRANCH" | tee -a "$EVIDENCE_DIR/run.txt" >&2
+            exit 2
+          fi
+          if [[ ! "$GAMES" =~ ^([1-9]|10)$ ]]; then
+            printf 'Game count must be a whole number from 1 to 10.\n' | tee -a "$EVIDENCE_DIR/run.txt" >&2
+            exit 2
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: ${{ env.TEMURIN_VERSION }}
+      - name: Verify Java and install pinned Forge
+        run: |
+          java -version > "$EVIDENCE_DIR/java-version.log" 2>&1
+          grep -F "(build $TEMURIN_VERSION)" "$EVIDENCE_DIR/java-version.log"
+          bash scripts/setup_forge.sh "$RUNNER_TEMP/forge" 2>&1 | tee "$EVIDENCE_DIR/forge-setup.log"
+      - name: Play the requested games
+        run: |
+          python3 -B -m scripts.stage_b \
+            --forge-dir "$RUNNER_TEMP/forge" --output-dir "$EVIDENCE_DIR/batch" --games "$GAMES" \
+            --decks decks/stage-a/ramp.dck decks/stage-a/aggro.dck \
+                    decks/stage-a/midrange.dck decks/stage-a/control.dck
+      - name: Identify the attempt that produced the summary
+        id: summary
+        if: ${{ !cancelled() }}
+        run: |
+          if [[ -s "$EVIDENCE_DIR/batch/summary.md" ]]; then
+            printf 'attempt=%s\n' "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Upload reports and available diagnostics
+        id: upload
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: commander-batch-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: ${{ env.EVIDENCE_DIR }}
+          if-no-files-found: error
+
+  archive:
+    name: Archive Markdown summary
+    needs: simulate
+    if: >-
+      ${{ !cancelled() &&
+          github.ref == format('refs/heads/{0}', github.event.repository.default_branch) &&
+          needs.simulate.outputs.artifact-id != '' &&
+          needs.simulate.outputs.summary-attempt != '' }}
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+      - name: Download the simulation artifact
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.simulate.outputs.artifact-id }}
+          path: ${{ runner.temp }}/archive-artifact
+      - name: Publish the Markdown summary
+        env:
+          SUMMARY_ATTEMPT: ${{ needs.simulate.outputs.summary-attempt }}
+        run: |
+          python3 -B scripts/archive_report.py \
+            --branch "$ARCHIVE_BRANCH" --run-id "$GITHUB_RUN_ID" --attempt "$SUMMARY_ATTEMPT" \
+            --summary "$RUNNER_TEMP/archive-artifact/batch/summary.md"
