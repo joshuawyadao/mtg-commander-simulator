@@ -1,23 +1,21 @@
 # Plan
 
-Turn the verified Stage A game into a reusable four-player Commander batch and verify ten attempts on hosted Ubuntu.
+Run the existing fast CI Verify job on pull requests and main pushes while keeping Forge gameplay manually dispatched.
 
 ## Scope
 
-- Stage B includes a Python CLI, four Forge-native decks per run, sequential execution, CSV, JSON and Markdown reports, automated tests, and one hosted verification run.
-- Stage C delivers the permanent workflow and Git archive described in the reporting requirements.
+- In: the Stage A workflow triggers, README guidance, existing fast tests, and current-head pull request verification.
+- Out: simulation logic, dependencies, and the separate Stage C branch. The live branch-rule change must preserve Stage C report publication.
 
 ## Action items
 
-- [x] Reuse the pinned Forge setup, Java deck validation, process logging, and result parsing from Stage A. Preserve the single-game smoke command and evidence format.
-- [x] Add a batch CLI for deck paths, game count, seed, and deadlines. Validate a staged copy of each deck, then run one isolated Forge process per game and keep raw diagnostics for each attempt.
-- [x] Generate the three report formats from the same result records. Report verified wins, genuine draws, timeouts, and failures individually, and exclude timeouts and failures from deck win rates.
-- [x] Test invalid configuration, mixed results, setup failure, and report consistency. Run the targeted batch suite, full unittest discovery, shell syntax check, and diff checks.
-- [x] Fix the recovered AI decision timeout misclassified by the first hosted batch. Replay the captured game 8 logs and test that genuine game timeouts and unrelated exceptions still fail.
-- [x] Document the command, report outputs, and troubleshooting in the README. Update the specification and hosted evidence after the ten-game run.
-- [x] Verify ten attempts on hosted Ubuntu with the pinned toolchain. Download and reconcile the reports against the raw game logs. [Hosted verification](Stage-B-Verification.md)
-- [x] Record the hosted evidence and restore the one-game dispatch before publishing the pull request.
+- [x] Compare main with the Stage C branch, confirm the missing main-push trigger and confirm GitHub has no required check on main.
+- [ ] Trigger verification on main pushes and unfiltered pull requests targeting main. Keep Forge setup and gameplay behind manual dispatch.
+- [ ] Update the README to describe automatic fast checks and the manual gameplay boundary.
+- [ ] Check workflow syntax and event routing. Run shell syntax and existing unittest discovery. The trigger-only change needs no additional simulation test.
+- [ ] Open the PR, confirm the hosted fast job ran and the gameplay job was skipped, and complete both review passes.
+- [ ] Coordinate live enforcement with Stage C. Its report publisher pushes directly to main, so enabling a required check before that publisher has a compatible route would break report archiving.
 
 ## Open questions
 
-None.
+None for the workflow change.
