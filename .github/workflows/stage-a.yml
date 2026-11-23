@@ -2,13 +2,11 @@ name: Stage A Commander smoke test
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
   pull_request:
-    paths:
-      - '.github/workflows/stage-a.yml'
-      - '.github/workflows/simulate.yml'
-      - 'decks/stage-a/**'
-      - 'scripts/**'
-      - 'tests/**'
+    # Docs-only pull requests also need the CI Verify check.
+    branches: [main]
 
 permissions:
   contents: read
