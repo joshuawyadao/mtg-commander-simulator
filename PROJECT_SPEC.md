@@ -1,7 +1,7 @@
 # MTG Commander Simulation Framework
 ## Project Specification — v0.1
 
-**Status:** Stage C rehearsed on GitHub-hosted Ubuntu\
+**Status:** Phase 2 lineups verified on GitHub-hosted Ubuntu\
 **Target environment:** Public GitHub repository + GitHub Actions  
 **Primary technologies:** Java, Forge MTG, Python  
 **Development workflow:** Codex  
@@ -242,7 +242,8 @@ The implementation must translate configuration into the actual supported Forge 
 ### Markdown Run Report
 
 - **Run summary.** Record the start time with time zone, run ID and attempt, workflow run URL, source commit, Forge and Java versions, settings, total runtime, and counts of attempted games, completions, draws, timeouts, and failures.
-- **Deck results.** Record each deck's name, version, archetype, AI profile, completed games played, wins, losses, draws, and win rate. Divide wins by completed games played and show the rate as unavailable when that count is zero. Highlight a designated test deck when the configuration includes one.
+- **Goal deck dashboard.** Highlight the designated seat with its win rate, record, pros and cons, and game-by-game outcomes. Use completed games that included the goal deck to summarize its win count relative to its opponents and identify the most frequent winners in its losses. The alternate lineups default to seat three and the run can explicitly select any seat.
+- **Deck results.** Record each deck's name, version, archetype, AI profile, completed games played, wins, losses, draws, and win rate. Divide wins by completed games played and show the rate as unavailable when that count is zero. Surface timeouts and failures in batch health and in the game details.
 - **Game results.** Record the seats, seed, runtime, and winner, draw, timeout, or failure for each attempt. Include the path of each available raw log within the downloadable artifact.
 
 ### Run Archive
@@ -337,7 +338,7 @@ These features may be considered after validating the generic infrastructure.
 Run ten Commander games in GitHub Actions.
 
 ### Phase 2 — Multi-Archetype Validation
-Evaluate whether the framework works with different deck strategies.
+Validate graveyard recursion and spellslinger against three fixed baseline opponents. Both new lineups completed ten hosted games and produced Git-tracked summaries. [Phase 2 verification](docs/Phase-2-Verification.md)
 
 ### Phase 3 — Detailed Telemetry
 Collect board state, token generation, combat, and resource-development metrics.
@@ -400,4 +401,4 @@ The generic PoC is complete when a public GitHub repository contains a reproduci
 
 ---
 
-**Project status:** Stage C rehearsed. See the [hosted workflow and archive evidence](docs/Stage-C-Verification.md).
+**Project status:** Phase 2 lineups verified. See the [hosted workflow and archive evidence](docs/Phase-2-Verification.md).

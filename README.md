@@ -7,15 +7,26 @@ Stage A passed on GitHub-hosted Ubuntu with Forge 2.0.16 and Temurin 17. Azorius
 - [Project specification v0.1](PROJECT_SPEC.md)
 - [Stage A feasibility review and smoke test plan](docs/Stage-A-Feasibility.md)
 - [Stage C hosted verification](docs/Stage-C-Verification.md)
+- [Phase 2 lineup verification](docs/Phase-2-Verification.md)
 - [Simulation run reports](reports/runs/README.md)
 
 ## Run a hosted Commander batch
 
-1. Open **Actions → Commander batch simulation → Run workflow** in GitHub. Select **main** and enter a whole number from **1 to 10**. The default is 10. GitHub makes the new dispatch available once the workflow is on the default branch.
+1. Open **Actions → Commander batch simulation → Run workflow** in GitHub. Select **main**, choose a lineup, and enter a whole number from **1 to 10**. The defaults are `baseline` and 10 games. For **Goal deck seat**, choose `auto` or select a seat from **1 to 4**.
 2. Open the run and download its `commander-batch-<run-id>-attempt-<attempt>` artifact. Start with `batch/summary.md`. The artifact also contains the CSV, JSON, and raw logs.
 3. Find the Git-tracked copy at `reports/runs/<run-id>/attempt-<attempt>/summary.md` on `main`. Use **Re-run all jobs** to repeat a batch. Download any artifact you want to keep before rerunning. The rerun uploads a new artifact and adds a summary folder.
 
-The hosted batch uses the four checked-in Stage A decks in fixture order, starting with seed 42. For a failure, check the artifact's `run.txt` for rejected inputs, `forge-setup.log` for installation errors, or the batch summary and its log links for deck validation and gameplay failures. Generated summaries are archived even when gameplay fails.
+The three lineups use Green Ramp, Red Aggro, and Azorius Control in seats one, two, and four. Games start with seed 42.
+
+| Lineup | Seat three |
+| --- | --- |
+| `baseline` | Orzhov Midrange |
+| `graveyard-recursion` | Golgari Graveyard Recursion, led by Meren of Clan Nel Toth |
+| `spellslinger` | Mono-Blue Spellslinger, led by Talrand, Sky Summoner |
+
+With `auto`, the dashboard highlights the new deck in seat three for `graveyard-recursion` and `spellslinger`. The baseline opens with batch health and deck standings. Pick a seat to show that deck's win rate, record, pros and cons, and game-by-game results first. The takeaways show whether the deck led the lineup in wins and who won most often in its losses. They use completed games that included the goal deck. Expand **Game results and logs** to see who won each game and open its diagnostics.
+
+For a failure, check the artifact's `run.txt` for rejected inputs, `forge-setup.log` for installation errors, or the batch summary and its log links for deck validation and gameplay failures. Generated summaries are archived even when gameplay fails.
 
 ## Run the Stage A smoke test
 
@@ -24,7 +35,7 @@ The hosted batch uses the four checked-in Stage A decks in fixture order, starti
 
 On failure, check `forge-setup.log` for download, checksum, or extraction errors. Check `fixture-validation.stderr.log` for unresolved cards or deck legality issues, and `simulation.stderr.log` and `simulation.stdout.log` for engine errors and timeouts. A draw is recorded and the smoke check requires a winner to pass.
 
-Pull requests that touch simulation scripts, tests, Stage A fixtures, or the workflow run the fast checks on Linux. Use `bash -n scripts/setup_forge.sh` and `python3 -B -m unittest discover -s tests -v` for the same checks locally.
+Pull requests that touch simulation scripts, tests, deck fixtures, or the workflow run the fast checks on Linux. Use `bash -n scripts/setup_forge.sh` and `python3 -B -m unittest discover -s tests -v` for the same checks locally.
 
 ## Run the batch CLI locally
 
@@ -35,14 +46,12 @@ work_dir=$(mktemp -d)
 bash scripts/setup_forge.sh "$work_dir/forge"
 python3 -B -m scripts.stage_b \
   --forge-dir "$work_dir/forge" --output-dir "$work_dir/batch" \
-  --games 10 --seed 42 \
-  --decks decks/stage-a/ramp.dck decks/stage-a/aggro.dck \
-          decks/stage-a/midrange.dck decks/stage-a/control.dck
+  --games 10 --seed 42 --lineup baseline
 ```
 
-Use four Forge-native Commander decks with distinct names, one commander and 99 main-deck cards per deck. The CLI validates a snapshot of the decks and records their SHA-256 hashes. Seating follows input order, and each game increments the seed by one. The default Forge clock is 600 seconds, with a separate 720-second process deadline. Set them with `--game-clock-seconds` and `--process-deadline-seconds`.
+Use `--decks` with four paths for a custom lineup, and add `--goal-seat 1` through `--goal-seat 4` to highlight a deck in the dashboard. Each deck needs a distinct name, one commander, and 99 main-deck cards in Forge-native format. The CLI validates a snapshot of the decks and records their SHA-256 hashes. Seating follows input order, and each game increments the seed by one. The default Forge clock is 600 seconds, with a separate 720-second process deadline. Set them with `--game-clock-seconds` and `--process-deadline-seconds`.
 
-- **`summary.md`** shows batch settings, counts, deck results, and links to the raw logs.
+- **`summary.md`** opens with the dashboard. Expand the details for run settings, deck versions, and raw log links.
 - **`results.json`** contains the complete structured results. **`results.csv`** has one row per attempt, with JSON-encoded seats and log paths.
 - **`game-0001/`**, **`game-0002/`**, and later folders hold each game's stdout, stderr, and available peak memory measurements. Batch-level Java and deck-validation logs sit beside the reports.
 
