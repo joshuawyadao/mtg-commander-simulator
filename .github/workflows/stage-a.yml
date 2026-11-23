@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/stage-a.yml'
+      - '.github/workflows/simulate.yml'
       - 'decks/stage-a/**'
       - 'scripts/**'
       - 'tests/**'
@@ -25,7 +26,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Check Stage A runner and tests
+      - name: Check simulation and archive scripts
         run: |
           bash -n scripts/setup_forge.sh
           python3 -B -m unittest discover -s tests -v
