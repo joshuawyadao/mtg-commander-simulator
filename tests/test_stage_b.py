@@ -28,9 +28,46 @@ class BatchTests(unittest.TestCase):
             path = folder / "my deck.dck"
             path.write_text(f"deck {seat}", encoding="utf-8")
             self.decks.append(str(path))
-        self.args = [
-            "--forge-dir", str(self.forge), "--output-dir", str(self.output), "--decks", *self.decks,
+        self.common_args = ["--forge-dir", str(self.forge), "--output-dir", str(self.output)]
+        self.args = [*self.common_args, "--decks", *self.decks]
+
+    def test_lineups_use_the_same_opponents_and_replace_only_seat_three(self):
+        candidates = {
+            "baseline": "decks/stage-a/midrange.dck",
+            "graveyard-recursion": "decks/phase-2/graveyard-recursion.dck",
+            "spellslinger": "decks/phase-2/spellslinger.dck",
+        }
+        for lineup, candidate in candidates.items():
+            with self.subTest(lineup=lineup), patch("scripts.stage_b.run_batch", return_value=0) as run:
+                output = self.output / lineup
+                args = ["--forge-dir", str(self.forge), "--output-dir", str(output), "--lineup", lineup]
+                self.assertEqual(stage_b.main(args), 0)
+                parsed, actual_output = run.call_args.args
+                self.assertEqual(actual_output, output)
+                self.assertEqual(parsed.lineup, lineup)
+                self.assertEqual(tuple(map(str, parsed.decks)), (
+                    "decks/stage-a/ramp.dck", "decks/stage-a/aggro.dck", candidate, "decks/stage-a/control.dck",
+                ))
+
+    def test_reports_name_the_selected_lineup_even_when_setup_fails(self):
+        args = [
+            "--forge-dir", str(self.root / "missing"), "--output-dir", str(self.output), "--lineup", "spellslinger",
         ]
+        with contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(stage_b.main(args), 1)
+        report = json.loads((self.output / "results.json").read_text())
+        self.assertEqual(report["run"]["lineup"], "spellslinger")
+        self.assertIn("- Lineup: spellslinger", (self.output / "summary.md").read_text())
+
+    def test_rejects_unknown_lineup_or_both_deck_selections(self):
+        for args in (
+            [*self.common_args, "--lineup", "unknown"],
+            [*self.args, "--lineup", "baseline"],
+        ):
+            with self.subTest(args=args), contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:
+                stage_b.main(args)
+            self.assertEqual(error.exception.code, 2)
+            self.assertFalse(self.output.exists())
 
     def test_batch_continues_after_timeout_and_launch_error(self):
         names = [f"Deck {seat}" for seat in range(1, 5)]
@@ -97,6 +134,7 @@ class BatchTests(unittest.TestCase):
             "requested": 5, "attempted": 5, "completed": 3, "won": 2, "draw": 1, "timeout": 1, "failed": 1,
         })
         self.assertEqual(report["run"]["forge_version"], "2.0.16")
+        self.assertIsNone(report["run"]["lineup"])
         self.assertIn("17.0.21+9", report["run"]["java_version"])
         self.assertEqual(report["decks"][0]["sha256"], hashlib.sha256(b"deck 1").hexdigest())
         self.assertEqual(report["decks"][0]["file"], self.decks[0])

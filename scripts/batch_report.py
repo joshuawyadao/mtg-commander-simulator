@@ -94,6 +94,7 @@ def write_reports(output_dir: Path, run: dict, decks: list[dict], games: list[di
         f"- Attempt: {_markdown(run.get('run_attempt'))}",
         f"- Workflow URL: {_markdown(run.get('workflow_url'))}",
         f"- Source commit: {_markdown(run.get('source_commit'))}",
+        f"- Lineup: {_markdown(run.get('lineup'))}",
         f"- Forge version: {_markdown(run.get('forge_version'))}",
         f"- Java version: {_markdown(run.get('java_version'))}",
         f"- Games requested: {counts['requested']}",

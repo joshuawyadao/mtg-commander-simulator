@@ -1,9 +1,18 @@
 name: Commander batch simulation
-run-name: Commander batch · ${{ inputs.games }} requested
+run-name: Commander batch · ${{ inputs.lineup }} · ${{ inputs.games }} requested
 
 on:
   workflow_dispatch:
     inputs:
+      lineup:
+        description: Commander lineup
+        required: true
+        type: choice
+        default: baseline
+        options:
+          - baseline
+          - graveyard-recursion
+          - spellslinger
       games:
         description: Number of games (1 to 10)
         required: true
@@ -31,6 +40,7 @@ jobs:
       summary-attempt: ${{ steps.summary.outputs.attempt }}
     env:
       GAMES: ${{ inputs.games }}
+      LINEUP: ${{ inputs.lineup }}
       TEMURIN_VERSION: '17.0.21+9'
     steps:
       - name: Prepare evidence and validate dispatch
@@ -38,8 +48,8 @@ jobs:
           EVIDENCE_DIR="$RUNNER_TEMP/commander-batch-evidence"
           mkdir -p -- "$EVIDENCE_DIR"
           printf 'EVIDENCE_DIR=%s\n' "$EVIDENCE_DIR" >> "$GITHUB_ENV"
-          printf 'Commit: %s\nRun ID: %s\nAttempt: %s\nRunner OS: %s\nRequested games: %s\n' \
-            "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$RUNNER_OS" "$GAMES" > "$EVIDENCE_DIR/run.txt"
+          printf 'Commit: %s\nRun ID: %s\nAttempt: %s\nRunner OS: %s\nLineup: %s\nRequested games: %s\n' \
+            "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$RUNNER_OS" "$LINEUP" "$GAMES" > "$EVIDENCE_DIR/run.txt"
           if [[ "$GITHUB_REF" != "refs/heads/$ARCHIVE_BRANCH" ]]; then
             printf 'Select the %s branch to run and archive a batch.\n' "$ARCHIVE_BRANCH" | tee -a "$EVIDENCE_DIR/run.txt" >&2
             exit 2
@@ -64,8 +74,7 @@ jobs:
         run: |
           python3 -B -m scripts.stage_b \
             --forge-dir "$RUNNER_TEMP/forge" --output-dir "$EVIDENCE_DIR/batch" --games "$GAMES" \
-            --decks decks/stage-a/ramp.dck decks/stage-a/aggro.dck \
-                    decks/stage-a/midrange.dck decks/stage-a/control.dck
+            --lineup "$LINEUP"
       - name: Identify the attempt that produced the summary
         id: summary
         if: ${{ !cancelled() }}

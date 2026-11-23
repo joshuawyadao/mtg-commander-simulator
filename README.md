@@ -11,11 +11,19 @@ Stage A passed on GitHub-hosted Ubuntu with Forge 2.0.16 and Temurin 17. Azorius
 
 ## Run a hosted Commander batch
 
-1. Open **Actions → Commander batch simulation → Run workflow** in GitHub. Select **main** and enter a whole number from **1 to 10**. The default is 10. GitHub makes the new dispatch available once the workflow is on the default branch.
+1. Open **Actions → Commander batch simulation → Run workflow** in GitHub. Select **main**, choose a lineup, and enter a whole number from **1 to 10**. The defaults are `baseline` and 10 games.
 2. Open the run and download its `commander-batch-<run-id>-attempt-<attempt>` artifact. Start with `batch/summary.md`. The artifact also contains the CSV, JSON, and raw logs.
 3. Find the Git-tracked copy at `reports/runs/<run-id>/attempt-<attempt>/summary.md` on `main`. Use **Re-run all jobs** to repeat a batch. Download any artifact you want to keep before rerunning. The rerun uploads a new artifact and adds a summary folder.
 
-The hosted batch uses the four checked-in Stage A decks in fixture order, starting with seed 42. For a failure, check the artifact's `run.txt` for rejected inputs, `forge-setup.log` for installation errors, or the batch summary and its log links for deck validation and gameplay failures. Generated summaries are archived even when gameplay fails.
+The three lineups use Green Ramp, Red Aggro, and Azorius Control in seats one, two, and four. Games start with seed 42.
+
+| Lineup | Seat three |
+| --- | --- |
+| `baseline` | Orzhov Midrange |
+| `graveyard-recursion` | Golgari Graveyard Recursion, led by Meren of Clan Nel Toth |
+| `spellslinger` | Mono-Blue Spellslinger, led by Talrand, Sky Summoner |
+
+For a failure, check the artifact's `run.txt` for rejected inputs, `forge-setup.log` for installation errors, or the batch summary and its log links for deck validation and gameplay failures. Generated summaries are archived even when gameplay fails.
 
 ## Run the Stage A smoke test
 
@@ -24,7 +32,7 @@ The hosted batch uses the four checked-in Stage A decks in fixture order, starti
 
 On failure, check `forge-setup.log` for download, checksum, or extraction errors. Check `fixture-validation.stderr.log` for unresolved cards or deck legality issues, and `simulation.stderr.log` and `simulation.stdout.log` for engine errors and timeouts. A draw is recorded and the smoke check requires a winner to pass.
 
-Pull requests that touch simulation scripts, tests, Stage A fixtures, or the workflow run the fast checks on Linux. Use `bash -n scripts/setup_forge.sh` and `python3 -B -m unittest discover -s tests -v` for the same checks locally.
+Pull requests that touch simulation scripts, tests, deck fixtures, or the workflow run the fast checks on Linux. Use `bash -n scripts/setup_forge.sh` and `python3 -B -m unittest discover -s tests -v` for the same checks locally.
 
 ## Run the batch CLI locally
 
@@ -35,12 +43,10 @@ work_dir=$(mktemp -d)
 bash scripts/setup_forge.sh "$work_dir/forge"
 python3 -B -m scripts.stage_b \
   --forge-dir "$work_dir/forge" --output-dir "$work_dir/batch" \
-  --games 10 --seed 42 \
-  --decks decks/stage-a/ramp.dck decks/stage-a/aggro.dck \
-          decks/stage-a/midrange.dck decks/stage-a/control.dck
+  --games 10 --seed 42 --lineup baseline
 ```
 
-Use four Forge-native Commander decks with distinct names, one commander and 99 main-deck cards per deck. The CLI validates a snapshot of the decks and records their SHA-256 hashes. Seating follows input order, and each game increments the seed by one. The default Forge clock is 600 seconds, with a separate 720-second process deadline. Set them with `--game-clock-seconds` and `--process-deadline-seconds`.
+Use `--decks` with four paths for a custom lineup. Each deck needs a distinct name, one commander, and 99 main-deck cards in Forge-native format. The CLI validates a snapshot of the decks and records their SHA-256 hashes. Seating follows input order, and each game increments the seed by one. The default Forge clock is 600 seconds, with a separate 720-second process deadline. Set them with `--game-clock-seconds` and `--process-deadline-seconds`.
 
 - **`summary.md`** shows batch settings, counts, deck results, and links to the raw logs.
 - **`results.json`** contains the complete structured results. **`results.csv`** has one row per attempt, with JSON-encoded seats and log paths.

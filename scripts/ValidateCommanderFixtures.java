@@ -15,7 +15,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/** Validates the four Stage A fixtures against the installed Forge release. */
+/** Validates four Commander decklists against the installed Forge release. */
 public class ValidateCommanderFixtures {
     public static void main(String[] paths) {
         if (paths.length != 4) {

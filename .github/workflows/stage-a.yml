@@ -6,7 +6,7 @@ on:
     paths:
       - '.github/workflows/stage-a.yml'
       - '.github/workflows/simulate.yml'
-      - 'decks/stage-a/**'
+      - 'decks/**'
       - 'scripts/**'
       - 'tests/**'
 
