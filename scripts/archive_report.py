@@ -1,4 +1,4 @@
-"""Archive one workflow attempt's Markdown report on a Git branch."""
+"""Prepare one workflow attempt's Markdown report for a checked pull request."""
 
 import argparse
 from pathlib import Path
@@ -9,7 +9,6 @@ import sys
 
 BOT_NAME = "github-actions[bot]"
 BOT_EMAIL = "41898282+github-actions[bot]@users.noreply.github.com"
-MAX_PUSH_ATTEMPTS = 4
 
 
 class ArchiveError(Exception):
@@ -61,10 +60,28 @@ def destination_status(cwd: Path, relative: Path, report: bytes) -> str:
     return "new"
 
 
-def archive(branch: str, run_id: str, attempt: str, summary: Path, cwd: Path) -> str:
+def fetch_head(cwd: Path, ref: str) -> str:
+    git("fetch", "--no-tags", "origin", ref, cwd=cwd)
+    return git("rev-parse", "FETCH_HEAD", cwd=cwd).stdout.strip()
+
+
+def reuse_report_branch(cwd: Path, ref: str, base_ref: str, relative: Path, report: bytes) -> bool:
+    if not git("ls-remote", "origin", ref, cwd=cwd).stdout.strip():
+        return False
+
+    head = fetch_head(cwd, ref)
+    base = fetch_head(cwd, base_ref)
+    changes = git("diff", "--no-renames", "--name-status", f"{base}...{head}", cwd=cwd)
+    if changes.stdout.splitlines() != [f"A\t{relative.as_posix()}"]:
+        raise ArchiveError(f"existing report branch must add only {relative}")
+    git("checkout", "--detach", head, cwd=cwd)
+    return destination_status(cwd, relative, report) == "identical"
+
+
+def archive(base_branch: str, run_id: str, attempt: str, summary: Path, cwd: Path) -> str | None:
     run_id = positive_id(run_id, "run ID")
     attempt = positive_id(attempt, "attempt")
-    validate_branch(branch, cwd)
+    validate_branch(base_branch, cwd)
     if not summary.is_absolute():
         raise ArchiveError("summary must be an absolute file path")
     if summary.is_symlink() or not summary.is_file():
@@ -75,48 +92,52 @@ def archive(branch: str, run_id: str, attempt: str, summary: Path, cwd: Path) ->
 
     clean_checkout(cwd)
     relative = Path("reports") / "runs" / run_id / f"attempt-{attempt}" / "summary.md"
-    ref = f"refs/heads/{branch}"
+    report_branch = f"archive/commander-{run_id}-attempt-{attempt}"
+    if base_branch == report_branch:
+        raise ArchiveError("report branch must be distinct from the base branch")
+    base_ref = f"refs/heads/{base_branch}"
+    ref = f"refs/heads/{report_branch}"
 
-    for _ in range(MAX_PUSH_ATTEMPTS):
-        git("fetch", "--no-tags", "origin", ref, cwd=cwd)
-        base = git("rev-parse", "FETCH_HEAD", cwd=cwd).stdout.strip()
-        git("checkout", "--detach", base, cwd=cwd)
-        status = destination_status(cwd, relative, report)
-        if status == "identical":
-            return f"already archived: {relative}"
+    base = fetch_head(cwd, base_ref)
+    git("checkout", "--detach", base, cwd=cwd)
+    if destination_status(cwd, relative, report) == "identical":
+        return None
+    if reuse_report_branch(cwd, ref, base_ref, relative, report):
+        return report_branch
 
-        destination = cwd / relative
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_bytes(report)
-        git("add", "--", relative.as_posix(), cwd=cwd)
-        staged = git("diff", "--cached", "--name-only", cwd=cwd).stdout.splitlines()
-        if staged != [relative.as_posix()]:
-            raise ArchiveError(f"unexpected staged paths: {staged}")
-        git(
-            "-c", f"user.name={BOT_NAME}", "-c", f"user.email={BOT_EMAIL}",
-            "commit", "-m", f"Archive run {run_id} attempt {attempt} report", "--", relative.as_posix(),
-            cwd=cwd,
-        )
-        pushed = git("push", "origin", f"HEAD:{ref}", cwd=cwd, check=False)
-        if pushed.returncode == 0:
-            return f"archived: {relative}"
+    destination = cwd / relative
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_bytes(report)
+    git("add", "--", relative.as_posix(), cwd=cwd)
+    staged = git("diff", "--cached", "--name-only", cwd=cwd).stdout.splitlines()
+    if staged != [relative.as_posix()]:
+        raise ArchiveError(f"unexpected staged paths: {staged}")
+    git(
+        "-c", f"user.name={BOT_NAME}", "-c", f"user.email={BOT_EMAIL}",
+        "commit", "-m", f"Archive run {run_id} attempt {attempt} report", "--", relative.as_posix(),
+        cwd=cwd,
+    )
 
-        remote = git("ls-remote", "origin", ref, cwd=cwd).stdout.split()
-        if not remote or remote[0] == base:
-            detail = pushed.stderr.strip() or pushed.stdout.strip()
-            raise ArchiveError(f"could not publish {relative}: {detail}")
-    raise ArchiveError(f"could not publish {relative} after {MAX_PUSH_ATTEMPTS} competing pushes")
+    pushed = git("push", "origin", f"HEAD:{ref}", cwd=cwd, check=False)
+    if pushed.returncode == 0 or reuse_report_branch(cwd, ref, base_ref, relative, report):
+        return report_branch
+    detail = pushed.stderr.strip() or pushed.stdout.strip()
+    raise ArchiveError(f"could not publish {relative}: {detail}")
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--branch", required=True)
+    parser.add_argument("--base-branch", required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--attempt", required=True)
     parser.add_argument("--summary", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
-        print(archive(args.branch, args.run_id, args.attempt, args.summary, Path.cwd()))
+        report_branch = archive(args.base_branch, args.run_id, args.attempt, args.summary, Path.cwd())
+        if report_branch is None:
+            print("Summary already archived on the base branch.", file=sys.stderr)
+        else:
+            print(report_branch)
     except (ArchiveError, OSError) as error:
         print(f"archive failed: {error}", file=sys.stderr)
         return 1

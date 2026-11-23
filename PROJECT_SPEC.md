@@ -249,7 +249,7 @@ The implementation must translate configuration into the actual supported Forge 
 
 Archive the Markdown summary at `reports/runs/<run-id>/attempt-<attempt>/summary.md` in Git. Use the GitHub Actions run ID and attempt number so each rerun has its own record. Preserve earlier summaries and save partial or failed-run summaries whenever they are generated.
 
-Upload the Markdown summary, CSV and JSON exports, and available raw logs together as a GitHub Actions artifact. Git retains the Markdown record beyond the Actions retention window. In Stage C, give only the archive job repository write access. [Run archive guide](reports/runs/README.md)
+Upload the Markdown summary, CSV and JSON exports, and available raw logs together as a GitHub Actions artifact. Git retains the Markdown record beyond the Actions retention window. In Stage C, give only the archive job repository write access. It prepares a one-report branch and links to the comparison. The owner opens and merges the archive pull request after CI Verify succeeds. [Run archive guide](reports/runs/README.md)
 
 ### Future Metrics
 

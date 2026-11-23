@@ -13,9 +13,10 @@ Stage A passed on GitHub-hosted Ubuntu with Forge 2.0.16 and Temurin 17. Azorius
 
 1. Open **Actions → Commander batch simulation → Run workflow** in GitHub. Select **main** and enter a whole number from **1 to 10**. The default is 10. GitHub makes the new dispatch available once the workflow is on the default branch.
 2. Open the run and download its `commander-batch-<run-id>-attempt-<attempt>` artifact. Start with `batch/summary.md`. The artifact also contains the CSV, JSON, and raw logs.
-3. Find the Git-tracked copy at `reports/runs/<run-id>/attempt-<attempt>/summary.md` on `main`. Use **Re-run all jobs** to repeat a batch. Download any artifact you want to keep before rerunning. The rerun uploads a new artifact and adds a summary folder.
+3. Follow **Open the archive pull request** in the Actions run summary. Open the PR, review the report, and wait for **CI Verify** before merging. The merged copy lives at `reports/runs/<run-id>/attempt-<attempt>/summary.md` on `main`.
+4. Use **Re-run all jobs** to repeat a batch. Download any artifact you want to keep before rerunning. The rerun uploads a new artifact and prepares its own summary branch.
 
-The hosted batch uses the four checked-in Stage A decks in fixture order, starting with seed 42. For a failure, check the artifact's `run.txt` for rejected inputs, `forge-setup.log` for installation errors, or the batch summary and its log links for deck validation and gameplay failures. Generated summaries are archived even when gameplay fails.
+The hosted batch uses the four checked-in Stage A decks in fixture order, starting with seed 42. For a failure, check the artifact's `run.txt` for rejected inputs, `forge-setup.log` for installation errors, or the batch summary and its log links for deck validation and gameplay failures. The archive job prepares a report branch whenever a summary exists, including after a failed game.
 
 ## Run the Stage A smoke test
 
