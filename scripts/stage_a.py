@@ -19,6 +19,8 @@ FIXTURES = ("ramp.dck", "aggro.dck", "midrange.dck", "control.dck")
 GAME_CLOCK_SECONDS = 600
 PROCESS_DEADLINE_SECONDS = 720
 FIXTURE_DEADLINE_SECONDS = 120
+FORGE_JAR_PREFIX = "forge-gui-desktop-"
+FORGE_JAR_SUFFIX = "-jar-with-dependencies.jar"
 DRAW = re.compile(r"Game Result: Game 1 ended in a Draw! Took (\d+) ms\.")
 WIN = re.compile(r"Game Result: Game 1 ended in (\d+) ms\. (.+) has won!")
 PLAYER_OUTCOME = re.compile(r"^Game Outcome: Ai\(\d+\)-")
@@ -26,6 +28,15 @@ FORGE_ERROR = re.compile(
     r"^(?:Could not load deck - |No deck found in |Deck is NULL|An unsupported card was requested:|"
     r"Uncaught exception in thread |Exception in thread |Caused by: |"
     r"[ \t]+at [\w.$/]+\([^\n]+\))",
+    re.MULTILINE,
+)
+STACK_FRAMES = r"(?:\n[ \t]+at [^\n]+)*"
+AI_TIMEOUT_SAMPLE = re.compile(r"^AI eval thread at timeout:" + STACK_FRAMES + "$", re.MULTILINE)
+AI_TIMEOUT_TRACE = re.compile(
+    r"^java\.util\.concurrent\.TimeoutException\n"
+    r"[ \t]+at java\.base/java\.util\.concurrent\.FutureTask\.get\([^\n]+\)\n"
+    r"[ \t]+at forge\.ai\.AiController\.chooseSpellAbilitiesToPlayFromList\([^\n]+\)"
+    + STACK_FRAMES + "$",
     re.MULTILINE,
 )
 
@@ -58,13 +69,22 @@ def forge_error(stdout, stderr):
     return None
 
 
+def simulation_error(stdout, stderr):
+    # Forge catches this AI choice timeout and emits a companion profiling sample.
+    gameplay_log, samples = AI_TIMEOUT_SAMPLE.subn("", stdout)
+    error_log, traces = AI_TIMEOUT_TRACE.subn("", stderr)
+    if samples and traces == samples:
+        return forge_error(gameplay_log, error_log)
+    return forge_error(stdout, stderr)
+
+
 def parse_game(stdout, stderr, process, deck_names, seed):
     lines = stdout.splitlines()
     if process.timed_out or "Stopping slow match as draw" in lines:
         reason = "Java process deadline exceeded" if process.timed_out else "Forge game clock expired"
         return GameResult("timeout", reason=reason)
 
-    diagnostic = forge_error(stdout, stderr)
+    diagnostic = simulation_error(stdout, stderr)
     if diagnostic or process.returncode != 0:
         return GameResult("failed", reason=diagnostic or f"Java exited with status {process.returncode}")
 
@@ -137,6 +157,42 @@ def fixture_metadata(stdout, paths):
     return fixtures
 
 
+def find_forge_jar(forge_dir):
+    jars = [path for path in forge_dir.glob(f"{FORGE_JAR_PREFIX}*{FORGE_JAR_SUFFIX}") if path.is_file()]
+    if len(jars) != 1:
+        raise ValueError("Expected one Forge desktop JAR in the verified release directory")
+    return jars[0]
+
+
+def forge_version(jar):
+    return jar.name.removeprefix(FORGE_JAR_PREFIX).removesuffix(FORGE_JAR_SUFFIX)
+
+
+def headless_java(home):
+    return ["java", "-Djava.awt.headless=true", f"-Duser.home={home}", "-Xmx4g"]
+
+
+def validate_fixtures(java, jar, paths, output_dir):
+    preflight = [*java, "-cp", str(jar),
+                 str(ROOT / "scripts" / "ValidateCommanderFixtures.java"), *map(str, paths)]
+    return run_logged(preflight, jar.parent, output_dir, "fixture-validation", FIXTURE_DEADLINE_SECONDS)
+
+
+def verified_fixtures(validation, output_dir, paths):
+    stdout = read_log(output_dir / "fixture-validation.stdout.log")
+    diagnostic = forge_error(stdout, read_log(output_dir / "fixture-validation.stderr.log"))
+    if validation.timed_out:
+        raise ValueError("Forge fixture validation exceeded its deadline")
+    if diagnostic or validation.returncode != 0:
+        raise ValueError(diagnostic or f"Forge fixture validation exited with status {validation.returncode}")
+    return fixture_metadata(stdout, paths)
+
+
+def commander_command(java, jar, paths, seed, clock):
+    return [*java, "-jar", str(jar), "sim", "-f", "commander", "-n", "1",
+            "-D", str(paths[0].parent), "-d", *(path.name for path in paths), "-s", str(seed), "-c", str(clock)]
+
+
 def smoke_test(forge_dir, output_dir, seed):
     evidence = {
         "started_at": datetime.now(timezone.utc).isoformat(),
@@ -146,31 +202,17 @@ def smoke_test(forge_dir, output_dir, seed):
     }
     result = GameResult("failed", reason="Stage A did not finish")
     try:
-        jars = list(forge_dir.glob("forge-gui-desktop-*-jar-with-dependencies.jar"))
-        if len(jars) != 1:
-            raise ValueError("Expected one Forge desktop JAR in the verified release directory")
-        jar = jars[0]
-        evidence["forge_version"] = jar.name.removeprefix("forge-gui-desktop-").removesuffix(
-            "-jar-with-dependencies.jar"
-        )
+        jar = find_forge_jar(forge_dir)
+        evidence["forge_version"] = forge_version(jar)
         paths = [ROOT / "decks" / "stage-a" / name for name in FIXTURES]
         with tempfile.TemporaryDirectory(prefix="forge-stage-a-") as home:
-            java = ["java", "-Djava.awt.headless=true", f"-Duser.home={home}"]
-            preflight = [*java, "-Xmx4g", "-cp", str(jar),
-                         str(ROOT / "scripts" / "ValidateCommanderFixtures.java"), *map(str, paths)]
-            validation = run_logged(preflight, forge_dir, output_dir, "fixture-validation", FIXTURE_DEADLINE_SECONDS)
+            java = headless_java(home)
+            validation = validate_fixtures(java, jar, paths, output_dir)
             evidence["fixture_validation"] = asdict(validation)
-            validation_stdout = read_log(output_dir / "fixture-validation.stdout.log")
-            diagnostic = forge_error(validation_stdout, read_log(output_dir / "fixture-validation.stderr.log"))
-            if validation.timed_out:
-                raise ValueError("Forge fixture validation exceeded its deadline")
-            if diagnostic or validation.returncode != 0:
-                raise ValueError(diagnostic or f"Forge fixture validation exited with status {validation.returncode}")
-            fixtures = fixture_metadata(validation_stdout, paths)
+            fixtures = verified_fixtures(validation, output_dir, paths)
             evidence["fixtures"] = fixtures
 
-            command = [*java, "-Xmx4g", "-jar", str(jar), "sim", "-f", "commander", "-n", "1",
-                       "-D", str(paths[0].parent), "-d", *FIXTURES, "-s", str(seed), "-c", str(GAME_CLOCK_SECONDS)]
+            command = commander_command(java, jar, paths, seed, GAME_CLOCK_SECONDS)
             evidence["command"] = command
             process = run_logged(command, forge_dir, output_dir, "simulation", PROCESS_DEADLINE_SECONDS)
             evidence["simulation"] = asdict(process)
