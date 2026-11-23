@@ -11,4 +11,4 @@ GitHub registers a new manual workflow when it reaches the default branch. To te
 
 GitHub removed the first downloadable artifact when the workflow was fully rerun. Both Markdown summaries remained in the archive. Download earlier CSV, JSON, and logs before rerunning if you want to retain them.
 
-The first dispatch from `main` after merge will verify that GitHub registered the new workflow and that the archive job publishes to the default branch.
+The rehearsal above used direct pushes to a disposable archive branch. The checked-PR publisher is covered by local bare-Git tests for per-attempt branches, identical retries, conflicting contents and concurrent publication. It leaves the base unchanged. After integration, a dispatch from `main` can verify the run summary link, the report-only PR, and the CI Verify gate before the report is merged.

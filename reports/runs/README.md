@@ -12,4 +12,6 @@ Each summary records the run settings, per-deck results, and per-game outcomes. 
 
 Dashboard reports open with the goal deck when one is selected, followed by batch health and deck standings. Expand **Run settings and deck versions** or **Game results and logs** for the underlying evidence.
 
-The archive job publishes each generated summary to the default branch, including summaries from failed batches. If the simulation stops before it generates a summary, check the run's job logs and any uploaded diagnostics. [Reporting requirements](../../PROJECT_SPEC.md#8-required-reporting)
+The archive job publishes each generated summary on a unique `archive/commander-<run-id>-attempt-<attempt>` branch, including summaries from failed batches. Use the run summary's **Open the archive pull request** link to open or find the report PR. Review the exact Markdown change and merge it after **CI Verify** passes. Only merged reports appear in the default branch's archive.
+
+Re-running only the archive job reuses the branch when it contains the same report. If the report is already merged, the job finishes without preparing another PR. If the simulation stops before it generates a summary, check the job logs and any uploaded diagnostics. [Reporting requirements](../../PROJECT_SPEC.md#8-required-reporting)
