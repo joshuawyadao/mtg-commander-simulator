@@ -1,7 +1,7 @@
 # MTG Commander Simulation Framework
 ## Project Specification — v0.1
 
-**Status:** Stage C rehearsed on GitHub-hosted Ubuntu\
+**Status:** Phase 2 lineups verified on GitHub-hosted Ubuntu\
 **Target environment:** Public GitHub repository + GitHub Actions  
 **Primary technologies:** Java, Forge MTG, Python  
 **Development workflow:** Codex  
@@ -337,7 +337,7 @@ These features may be considered after validating the generic infrastructure.
 Run ten Commander games in GitHub Actions.
 
 ### Phase 2 — Multi-Archetype Validation
-Evaluate whether the framework works with different deck strategies.
+Validate graveyard recursion and spellslinger against three fixed baseline opponents. Both new lineups completed ten hosted games and produced Git-tracked summaries. [Phase 2 verification](docs/Phase-2-Verification.md)
 
 ### Phase 3 — Detailed Telemetry
 Collect board state, token generation, combat, and resource-development metrics.
@@ -400,4 +400,4 @@ The generic PoC is complete when a public GitHub repository contains a reproduci
 
 ---
 
-**Project status:** Stage C rehearsed. See the [hosted workflow and archive evidence](docs/Stage-C-Verification.md).
+**Project status:** Phase 2 lineups verified. See the [hosted workflow and archive evidence](docs/Phase-2-Verification.md).

@@ -7,6 +7,7 @@ Stage A passed on GitHub-hosted Ubuntu with Forge 2.0.16 and Temurin 17. Azorius
 - [Project specification v0.1](PROJECT_SPEC.md)
 - [Stage A feasibility review and smoke test plan](docs/Stage-A-Feasibility.md)
 - [Stage C hosted verification](docs/Stage-C-Verification.md)
+- [Phase 2 lineup verification](docs/Phase-2-Verification.md)
 - [Simulation run reports](reports/runs/README.md)
 
 ## Run a hosted Commander batch

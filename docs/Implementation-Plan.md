@@ -9,12 +9,12 @@ Validate the Commander batch workflow with graveyard recursion and spellslinger 
 
 ## Action items
 
-- [ ] Add single-commander Meren and Talrand decks with 99 main-deck cards each. Validate them in the pinned Forge release.
-- [ ] Add three named lineup presets to the batch runner and wire a selector into GitHub Actions. Record the selected lineup and deck archetypes in the reports.
-- [ ] Test selection, fixed seats, input rejection, and backward compatibility with explicit deck paths. Run unittest discovery, shell checks, and workflow lint.
-- [ ] Run both alternate lineups on hosted Ubuntu. Verify ten attempts per lineup, check that the intended mechanics resolve in the raw logs, and compare each archived Markdown report with its artifact.
-- [ ] Update the README and roadmap status, record the hosted evidence, and retain both archived summaries in Git.
-- [ ] Publish the feature branch and open the pull request for CI and review.
+- [x] Add single-commander Meren and Talrand decks with 99 main-deck cards each. Validate them in the pinned Forge release.
+- [x] Add three named lineup presets to the batch runner and wire a selector into GitHub Actions. Record the selected lineup and deck archetypes in the reports.
+- [x] Test selection, fixed seats, input rejection, and backward compatibility with explicit deck paths. Run unittest discovery, shell checks, and workflow lint.
+- [x] Run both alternate lineups on hosted Ubuntu. Verify ten attempts per lineup, check that the intended mechanics resolve in the raw logs, and compare each archived Markdown report with its artifact. [Hosted verification](Phase-2-Verification.md)
+- [x] Update the README and roadmap status, record the hosted evidence, and retain both archived summaries in Git.
+- [x] Prepare the verified feature branch for publication and pull request review.
 
 ## Open questions
 
