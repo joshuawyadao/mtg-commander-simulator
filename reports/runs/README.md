@@ -10,4 +10,6 @@ Open the folder for a workflow run ID, then choose its attempt number. Use **Re-
 
 Each summary records the run settings, per-deck results, and per-game outcomes. For CSV and JSON exports and raw logs, open the Actions run linked in the summary and download its artifact during the configured retention window. GitHub can remove an earlier artifact when you rerun all jobs. Download any files you want to retain before rerunning. Git keeps the Markdown summaries from both attempts. [GitHub Actions artifact retention](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/remove-workflow-artifacts)
 
+Dashboard reports open with the goal deck when one is selected, followed by batch health and deck standings. Expand **Run settings and deck versions** or **Game results and logs** for the underlying evidence.
+
 The archive job publishes each generated summary to the default branch, including summaries from failed batches. If the simulation stops before it generates a summary, check the run's job logs and any uploaded diagnostics. [Reporting requirements](../../PROJECT_SPEC.md#8-required-reporting)

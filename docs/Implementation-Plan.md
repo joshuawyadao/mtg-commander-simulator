@@ -1,21 +1,20 @@
 # Plan
 
-Publish the verified Stage B batch runner as a manual GitHub Actions workflow and archive the Markdown report from each attempt.
+Put the designated testing deck's observed pros and cons next to its record so readers can skim what went well and where it struggled.
 
 ## Scope
 
-- Stage C covers manual runs of one to ten games, artifact uploads, and a Git-tracked archive in the public repository.
-- Rehearse the workflow on a temporary branch. GitHub enables the permanent dispatch after the workflow reaches the default branch.
+- In: The goal deck section of generated Markdown and its documentation in README.md and PROJECT_SPEC.md.
+- Out: New gameplay telemetry, historical archive rewrites, and structured export changes.
 
 ## Action items
 
-- [x] Add the manual workflow with pinned Ubuntu tooling, input validation before Forge setup, and timeouts that preserve time to upload evidence.
-- [x] Upload the reports and logs for each attempt, including failed batches. Give a separate archive job permission to publish only the generated Markdown summary.
-- [x] Write reports to the existing run ID and attempt paths. Test idempotency, existing summary protection, missing summaries, and concurrent Git pushes with disposable repositories.
-- [x] Keep the actual Forge deck validation error in the archived summary, as well as the raw diagnostic log.
-- [x] Check workflow syntax and run the full unittest suite. Rehearse the ten-game path, reruns, and failure handling on hosted Ubuntu using an isolated archive branch.
-- [x] Document dispatch, reruns and artifact retention in the README and archive guide. Record the hosted evidence in the specification and verification notes. [Hosted verification](Stage-C-Verification.md)
-- [x] Prepare the verified feature branch for publication and pull request review.
+- [x] Check the available evidence in the goal deck record and the per-game outcomes.
+- [x] Add a compact pros and cons table before the outcome strip. Show whether the goal led the lineup in wins and who won most often in its losses.
+- [x] Cover ties, winless and lossless batches, no completed games, and games without the goal deck in the report tests.
+- [x] Update README.md and PROJECT_SPEC.md to explain what the takeaways measure.
+- [x] Run the report tests and the full suite. Re-render both verified ten-game lineups and check the GitHub Markdown output.
+- [x] Prepare the change for the Phase 2 branch. Track hosted CI and review on [PR #6](https://github.com/joshuawyadao/mtg-commander-simulator/pull/6).
 
 ## Open questions
 

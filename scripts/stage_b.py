@@ -16,11 +16,26 @@ from .batch_report import write_reports
 
 MAX_SEED = 2**63 - 1
 MAX_CLOCK = 2**31 - 1
+BASELINE_DECKS = tuple(Path("decks/stage-a", name) for name in forge.FIXTURES)
+RECURSION_DECK = Path("decks/phase-2/graveyard-recursion.dck")
+SPELLSLINGER_DECK = Path("decks/phase-2/spellslinger.dck")
+LINEUPS = {
+    "baseline": BASELINE_DECKS,
+    # Each alternate replaces midrange in seat three.
+    "graveyard-recursion": (*BASELINE_DECKS[:2], RECURSION_DECK, BASELINE_DECKS[3]),
+    "spellslinger": (*BASELINE_DECKS[:2], SPELLSLINGER_DECK, BASELINE_DECKS[3]),
+}
+GOAL_SEAT_BY_LINEUP = {
+    "graveyard-recursion": 3,
+    "spellslinger": 3,
+}
 FIXTURE_ARCHETYPES = {
-    "ramp.dck": "Ramp",
-    "aggro.dck": "Aggro",
-    "midrange.dck": "Midrange",
-    "control.dck": "Control",
+    forge.ROOT / "decks/stage-a/ramp.dck": "Ramp",
+    forge.ROOT / "decks/stage-a/aggro.dck": "Aggro",
+    forge.ROOT / "decks/stage-a/midrange.dck": "Midrange",
+    forge.ROOT / "decks/stage-a/control.dck": "Control",
+    forge.ROOT / RECURSION_DECK: "Graveyard recursion",
+    forge.ROOT / SPELLSLINGER_DECK: "Spellslinger",
 }
 LOG_SUFFIXES = {
     "stdout": "stdout.log",
@@ -53,14 +68,14 @@ def read_java_version(forge_dir, output_dir):
     return next((line for line in lines if "Runtime Environment" in line), version)
 
 
-def prepare_decks(original_paths, work_dir, jar, output_dir):
+def prepare_decks(original_paths, work_dir, jar, output_dir, *, deck_root):
     deck_dir = work_dir / "decks"
     deck_dir.mkdir()
     staged_paths = []
     for seat, path in enumerate(original_paths, start=1):
         # Forge resolves basenames within one directory. Give each staged copy its own name.
         staged = deck_dir / f"seat-{seat}.dck"
-        shutil.copyfile(path, staged)
+        shutil.copyfile(deck_root / path, staged)
         staged_paths.append(staged)
 
     preflight_home = work_dir / "preflight-home"
@@ -69,13 +84,11 @@ def prepare_decks(original_paths, work_dir, jar, output_dir):
     fixtures = forge.verified_fixtures(validation, output_dir, staged_paths)
     decks = []
     for seat, (fixture, original) in enumerate(zip(fixtures, original_paths, strict=True), start=1):
-        source = original.resolve()
-        archetype = FIXTURE_ARCHETYPES.get(source.name) if source.parent == forge.ROOT / "decks" / "stage-a" else None
         decks.append({
             **fixture,
             "file": str(original),
             "seat": seat,
-            "archetype": archetype,
+            "archetype": FIXTURE_ARCHETYPES.get((deck_root / original).resolve()),
             "ai_profile": "Forge default",
         })
     return staged_paths, decks
@@ -118,6 +131,8 @@ def run_batch(args, output_dir):
     run_id = os.environ.get("GITHUB_RUN_ID")
     run = {
         "started_at": datetime.now(timezone.utc).isoformat(),
+        "lineup": args.lineup,
+        "goal_seat": args.goal_seat,
         "requested_games": args.games,
         "base_seed": args.seed,
         "game_clock_seconds": args.game_clock_seconds,
@@ -138,7 +153,7 @@ def run_batch(args, output_dir):
         run["java_version"] = read_java_version(jar.parent, output_dir)
         with tempfile.TemporaryDirectory(prefix="forge-stage-b-") as temp:
             work_dir = Path(temp)
-            paths, decks = prepare_decks(args.decks, work_dir, jar, output_dir)
+            paths, decks = prepare_decks(args.decks, work_dir, jar, output_dir, deck_root=args.deck_root)
             deck_names = [deck["name"] for deck in decks]
             for game in range(1, args.games + 1):
                 result = play_game(
@@ -165,8 +180,12 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--forge-dir", required=True, type=Path)
     parser.add_argument("--output-dir", required=True, type=Path, help="new directory for reports and logs")
-    parser.add_argument("--decks", required=True, nargs=4, type=Path, metavar="DECK")
+    deck_selection = parser.add_mutually_exclusive_group(required=True)
+    deck_selection.add_argument("--decks", nargs=4, type=Path, metavar="DECK")
+    deck_selection.add_argument("--lineup", choices=LINEUPS, help="checked-in lineup preset")
     parser.add_argument("--games", type=int, default=10)
+    parser.add_argument("--goal-seat", type=int, choices=range(1, 5), metavar="SEAT",
+                        help="seat (1 to 4) to highlight as the goal deck")
     parser.add_argument("--seed", type=int, default=42, help="seed for the first game")
     parser.add_argument("--game-clock-seconds", type=int, default=forge.GAME_CLOCK_SECONDS)
     parser.add_argument("--process-deadline-seconds", type=int, default=forge.PROCESS_DEADLINE_SECONDS)
@@ -177,9 +196,14 @@ def main(argv=None):
         parser.error("all game seeds must be nonnegative signed 64-bit integers")
     if not 0 < args.game_clock_seconds < args.process_deadline_seconds <= MAX_CLOCK:
         parser.error("deadlines must be positive, with the process deadline above the game clock")
+    if args.lineup is not None:
+        args.decks = LINEUPS[args.lineup]
+    if args.goal_seat is None:
+        args.goal_seat = GOAL_SEAT_BY_LINEUP.get(args.lineup)
+    args.deck_root = forge.ROOT if args.lineup is not None else Path.cwd()
     try:
         for path in args.decks:
-            if path.suffix.lower() != ".dck" or not path.is_file():
+            if path.suffix.lower() != ".dck" or not (args.deck_root / path).is_file():
                 parser.error(f"expected an existing Forge .dck file: {path}")
         output_dir = args.output_dir.resolve()
         output_dir.mkdir(parents=True)
