@@ -4,7 +4,7 @@ import tempfile
 import time
 import unittest
 
-from scripts.stage_a import GameResult, ProcessResult, fixture_metadata, parse_game, run_logged
+from scripts.stage_a import GameResult, ProcessResult, fixture_metadata, parse_game, run_logged, verified_fixtures
 
 
 DECKS = ["Green Ramp", "Red Aggro", "Orzhov Midrange", "Azorius Control"]
@@ -98,6 +98,18 @@ class GameResultTests(unittest.TestCase):
 
 
 class FixtureMetadataTests(unittest.TestCase):
+    def test_preflight_failure_reports_forge_crash_header_before_stack_frame(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp)
+            (output / "fixture-validation.stdout.log").write_text("", encoding="utf-8")
+            (output / "fixture-validation.stderr.log").write_text(
+                "main > java.lang.IllegalArgumentException: Duplicate deck name: Green Ramp\n"
+                "\tat ValidateCommanderFixtures.main(ValidateCommanderFixtures.java:46)\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "Duplicate deck name: Green Ramp"):
+                verified_fixtures(ProcessResult(1, 1, None, False), output, [])
+
     def test_requires_one_record_per_fixture_in_input_order(self):
         with tempfile.TemporaryDirectory() as tmp:
             paths = [Path(tmp) / f"{index}.dck" for index in range(4)]

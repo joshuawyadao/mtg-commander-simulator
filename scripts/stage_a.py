@@ -30,6 +30,9 @@ FORGE_ERROR = re.compile(
     r"[ \t]+at [\w.$/]+\([^\n]+\))",
     re.MULTILINE,
 )
+FIXTURE_CRASH = re.compile(
+    r"^main > (java\.lang\.(?:IllegalArgumentException|IllegalStateException): [^\n]+)", re.MULTILINE,
+)
 STACK_FRAMES = r"(?:\n[ \t]+at [^\n]+)*"
 AI_TIMEOUT_SAMPLE = re.compile(r"^AI eval thread at timeout:" + STACK_FRAMES + "$", re.MULTILINE)
 AI_TIMEOUT_TRACE = re.compile(
@@ -180,7 +183,9 @@ def validate_fixtures(java, jar, paths, output_dir):
 
 def verified_fixtures(validation, output_dir, paths):
     stdout = read_log(output_dir / "fixture-validation.stdout.log")
-    diagnostic = forge_error(stdout, read_log(output_dir / "fixture-validation.stderr.log"))
+    stderr = read_log(output_dir / "fixture-validation.stderr.log")
+    crash = FIXTURE_CRASH.search(stderr)
+    diagnostic = crash[1] if crash else forge_error(stdout, stderr)
     if validation.timed_out:
         raise ValueError("Forge fixture validation exceeded its deadline")
     if diagnostic or validation.returncode != 0:
