@@ -35,7 +35,7 @@ For a failure, check the artifact's `run.txt` for rejected inputs, `forge-setup.
 
 On failure, check `forge-setup.log` for download, checksum, or extraction errors. Check `fixture-validation.stderr.log` for unresolved cards or deck legality issues, and `simulation.stderr.log` and `simulation.stdout.log` for engine errors and timeouts. A draw is recorded and the smoke check requires a winner to pass.
 
-Pull requests that touch simulation scripts, tests, deck fixtures, or the workflow run the fast checks on Linux. Use `bash -n scripts/setup_forge.sh` and `python3 -B -m unittest discover -s tests -v` for the same checks locally.
+The fast **CI Verify** job runs on pushes to `main` and every pull request targeting `main`, including docs-only changes. Use `bash -n scripts/setup_forge.sh` and `python3 -B -m unittest discover -s tests -v` for the same checks locally. Forge installation and gameplay run only through **Run workflow**.
 
 ## Run the batch CLI locally
 

@@ -19,3 +19,10 @@ Put the designated testing deck's observed pros and cons next to its record so r
 ## Open questions
 
 None.
+
+## Required fast CI
+
+- [x] Run CI Verify on main pushes and all pull requests targeting main, including report-only changes.
+- [x] Preserve the Stage C verification step and keep Forge gameplay behind manual dispatch.
+- [ ] Confirm hosted fast checks and review on the updated PR head.
+- [ ] Enable the required check on main once the unfiltered workflow and Stage C's checked archive path are live.
