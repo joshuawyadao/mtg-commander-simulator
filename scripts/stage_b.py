@@ -25,6 +25,10 @@ LINEUPS = {
     "graveyard-recursion": (*BASELINE_DECKS[:2], RECURSION_DECK, BASELINE_DECKS[3]),
     "spellslinger": (*BASELINE_DECKS[:2], SPELLSLINGER_DECK, BASELINE_DECKS[3]),
 }
+GOAL_SEAT_BY_LINEUP = {
+    "graveyard-recursion": 3,
+    "spellslinger": 3,
+}
 FIXTURE_ARCHETYPES = {
     forge.ROOT / "decks/stage-a/ramp.dck": "Ramp",
     forge.ROOT / "decks/stage-a/aggro.dck": "Aggro",
@@ -128,6 +132,7 @@ def run_batch(args, output_dir):
     run = {
         "started_at": datetime.now(timezone.utc).isoformat(),
         "lineup": args.lineup,
+        "goal_seat": args.goal_seat,
         "requested_games": args.games,
         "base_seed": args.seed,
         "game_clock_seconds": args.game_clock_seconds,
@@ -179,6 +184,8 @@ def main(argv=None):
     deck_selection.add_argument("--decks", nargs=4, type=Path, metavar="DECK")
     deck_selection.add_argument("--lineup", choices=LINEUPS, help="checked-in lineup preset")
     parser.add_argument("--games", type=int, default=10)
+    parser.add_argument("--goal-seat", type=int, choices=range(1, 5), metavar="SEAT",
+                        help="seat (1 to 4) to highlight as the goal deck")
     parser.add_argument("--seed", type=int, default=42, help="seed for the first game")
     parser.add_argument("--game-clock-seconds", type=int, default=forge.GAME_CLOCK_SECONDS)
     parser.add_argument("--process-deadline-seconds", type=int, default=forge.PROCESS_DEADLINE_SECONDS)
@@ -191,6 +198,8 @@ def main(argv=None):
         parser.error("deadlines must be positive, with the process deadline above the game clock")
     if args.lineup is not None:
         args.decks = LINEUPS[args.lineup]
+    if args.goal_seat is None:
+        args.goal_seat = GOAL_SEAT_BY_LINEUP.get(args.lineup)
     args.deck_root = forge.ROOT if args.lineup is not None else Path.cwd()
     try:
         for path in args.decks:

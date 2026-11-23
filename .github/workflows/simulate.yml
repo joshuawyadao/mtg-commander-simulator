@@ -18,6 +18,17 @@ on:
         required: true
         type: number
         default: 10
+      goal_seat:
+        description: Goal deck seat (auto uses the lineup's highlighted deck)
+        required: true
+        type: choice
+        default: auto
+        options:
+          - auto
+          - '1'
+          - '2'
+          - '3'
+          - '4'
 
 permissions:
   contents: read
@@ -41,6 +52,7 @@ jobs:
     env:
       GAMES: ${{ inputs.games }}
       LINEUP: ${{ inputs.lineup }}
+      GOAL_SEAT: ${{ inputs.goal_seat || 'auto' }}
       TEMURIN_VERSION: '17.0.21+9'
     steps:
       - name: Prepare evidence and validate dispatch
@@ -48,8 +60,8 @@ jobs:
           EVIDENCE_DIR="$RUNNER_TEMP/commander-batch-evidence"
           mkdir -p -- "$EVIDENCE_DIR"
           printf 'EVIDENCE_DIR=%s\n' "$EVIDENCE_DIR" >> "$GITHUB_ENV"
-          printf 'Commit: %s\nRun ID: %s\nAttempt: %s\nRunner OS: %s\nLineup: %s\nRequested games: %s\n' \
-            "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$RUNNER_OS" "$LINEUP" "$GAMES" > "$EVIDENCE_DIR/run.txt"
+          printf 'Commit: %s\nRun ID: %s\nAttempt: %s\nRunner OS: %s\nLineup: %s\nRequested games: %s\nGoal seat: %s\n' \
+            "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$RUNNER_OS" "$LINEUP" "$GAMES" "$GOAL_SEAT" > "$EVIDENCE_DIR/run.txt"
           if [[ "$GITHUB_REF" != "refs/heads/$ARCHIVE_BRANCH" ]]; then
             printf 'Select the %s branch to run and archive a batch.\n' "$ARCHIVE_BRANCH" | tee -a "$EVIDENCE_DIR/run.txt" >&2
             exit 2
@@ -58,6 +70,10 @@ jobs:
             printf 'Game count must be a whole number from 1 to 10.\n' | tee -a "$EVIDENCE_DIR/run.txt" >&2
             exit 2
           fi
+          case "$GOAL_SEAT" in
+            auto|1|2|3|4) ;;
+            *) printf 'Goal seat must be auto or a number from 1 to 4.\n' | tee -a "$EVIDENCE_DIR/run.txt" >&2; exit 2 ;;
+          esac
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -72,9 +88,13 @@ jobs:
           bash scripts/setup_forge.sh "$RUNNER_TEMP/forge" 2>&1 | tee "$EVIDENCE_DIR/forge-setup.log"
       - name: Play the requested games
         run: |
+          goal_args=()
+          if [[ "$GOAL_SEAT" != auto ]]; then
+            goal_args=(--goal-seat "$GOAL_SEAT")
+          fi
           python3 -B -m scripts.stage_b \
             --forge-dir "$RUNNER_TEMP/forge" --output-dir "$EVIDENCE_DIR/batch" --games "$GAMES" \
-            --lineup "$LINEUP"
+            --lineup "$LINEUP" "${goal_args[@]}"
       - name: Identify the attempt that produced the summary
         id: summary
         if: ${{ !cancelled() }}

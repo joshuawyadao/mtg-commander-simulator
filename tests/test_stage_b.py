@@ -36,11 +36,11 @@ class BatchTests(unittest.TestCase):
 
     def test_lineups_use_the_same_opponents_and_replace_only_seat_three(self):
         candidates = {
-            "baseline": "decks/stage-a/midrange.dck",
-            "graveyard-recursion": "decks/phase-2/graveyard-recursion.dck",
-            "spellslinger": "decks/phase-2/spellslinger.dck",
+            "baseline": ("decks/stage-a/midrange.dck", None),
+            "graveyard-recursion": ("decks/phase-2/graveyard-recursion.dck", 3),
+            "spellslinger": ("decks/phase-2/spellslinger.dck", 3),
         }
-        for lineup, candidate in candidates.items():
+        for lineup, (candidate, goal_seat) in candidates.items():
             with self.subTest(lineup=lineup), patch("scripts.stage_b.run_batch", return_value=0) as run:
                 output = self.output / lineup
                 args = ["--forge-dir", str(self.forge), "--output-dir", str(output), "--lineup", lineup]
@@ -48,9 +48,27 @@ class BatchTests(unittest.TestCase):
                 parsed, actual_output = run.call_args.args
                 self.assertEqual(actual_output, output)
                 self.assertEqual(parsed.lineup, lineup)
+                self.assertEqual(parsed.goal_seat, goal_seat)
                 self.assertEqual(tuple(map(str, parsed.decks)), (
                     "decks/stage-a/ramp.dck", "decks/stage-a/aggro.dck", candidate, "decks/stage-a/control.dck",
                 ))
+
+    def test_explicit_goal_seat_overrides_preset_and_supports_custom_decks(self):
+        for selection_number, deck_selection in enumerate((
+            ["--lineup", "spellslinger"], ["--lineup", "baseline"], ["--decks", *self.decks],
+        )):
+            for seat in range(1, 5):
+                with self.subTest(decks=deck_selection, seat=seat), patch("scripts.stage_b.run_batch", return_value=0) as run:
+                    output = self.root / f"reports-{selection_number}-{seat}"
+                    args = ["--forge-dir", str(self.forge), "--output-dir", str(output),
+                            *deck_selection, "--goal-seat", str(seat)]
+                    self.assertEqual(stage_b.main(args), 0)
+                    self.assertEqual(run.call_args.args[0].goal_seat, seat)
+
+    def test_custom_decks_have_no_implicit_goal_seat(self):
+        with patch("scripts.stage_b.run_batch", return_value=0) as run:
+            self.assertEqual(stage_b.main(self.args), 0)
+        self.assertIsNone(run.call_args.args[0].goal_seat)
 
     def test_preset_from_another_directory_reports_selected_lineup_when_setup_fails(self):
         result = subprocess.run(
@@ -64,6 +82,7 @@ class BatchTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1, result.stderr)
         report = json.loads((self.output / "results.json").read_text())
         self.assertEqual(report["run"]["lineup"], "spellslinger")
+        self.assertEqual(report["run"]["goal_seat"], 3)
         self.assertIn("Expected one Forge desktop JAR", report["run"]["batch_error"])
         self.assertIn("- Lineup: spellslinger", (self.output / "summary.md").read_text())
 
@@ -143,6 +162,7 @@ class BatchTests(unittest.TestCase):
         })
         self.assertEqual(report["run"]["forge_version"], "2.0.16")
         self.assertIsNone(report["run"]["lineup"])
+        self.assertIsNone(report["run"]["goal_seat"])
         self.assertIn("17.0.21+9", report["run"]["java_version"])
         self.assertEqual(report["decks"][0]["sha256"], hashlib.sha256(b"deck 1").hexdigest())
         self.assertEqual(report["decks"][0]["file"], self.decks[0])
@@ -155,11 +175,12 @@ class BatchTests(unittest.TestCase):
         self.assertEqual(report["games"][4]["winner"], "Deck 4")
 
     def test_setup_failure_emits_reports_without_game_attempts(self):
-        args = [*self.args, "--forge-dir", str(self.root / "missing")]
+        args = [*self.args, "--goal-seat", "4", "--forge-dir", str(self.root / "missing")]
         with contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(stage_b.main(args), 1)
         report = json.loads((self.output / "results.json").read_text())
         self.assertIn("Expected one Forge desktop JAR", report["run"]["batch_error"])
+        self.assertEqual(report["run"]["goal_seat"], 4)
         self.assertEqual(report["counts"]["attempted"], 0)
         self.assertEqual(report["counts"]["requested"], 10)
         self.assertEqual(report["games"], [])
@@ -168,7 +189,8 @@ class BatchTests(unittest.TestCase):
         self.assertIn("Expected one Forge desktop JAR", (self.output / "summary.md").read_text())
 
     def test_rejects_invalid_configuration_without_creating_output(self):
-        for flags in (["--games", "0"], ["--seed", str(stage_b.MAX_SEED)], ["--process-deadline-seconds", "10"]):
+        for flags in (["--games", "0"], ["--seed", str(stage_b.MAX_SEED)], ["--process-deadline-seconds", "10"],
+                      ["--goal-seat", "0"], ["--goal-seat", "5"], ["--goal-seat", "auto"]):
             with self.subTest(flags=flags), contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:
                 stage_b.main([*self.args, *flags])
             self.assertEqual(error.exception.code, 2)

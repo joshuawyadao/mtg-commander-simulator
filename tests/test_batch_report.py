@@ -79,10 +79,34 @@ class BatchReportTests(unittest.TestCase):
         self.assertEqual(payload["decks"][1]["win_rate"], 0)
         self.assertIn("| 3 | Ramp, Aggro, Midrange, Control | 44 | timeout |", markdown)
         self.assertIn("[stdout](games/03/simulation.stdout.log)", markdown)
-        self.assertIn("- Completed: 2", markdown)
+        self.assertIn("| **2 / 4** | 4 | 1 | 1 | 1 | 31.5 s |", markdown)
+        self.assertNotIn("## Goal deck", markdown)
+
+    def test_goal_dashboard_distinguishes_game_outcomes_and_compares_decks(self):
+        absent = {**game(6, "won", "Aggro"), "seats": ["Aggro", "Midrange", "Control"]}
+        games = [
+            game(1, "won", "Ramp"),
+            game(2, "won", "Aggro"),
+            game(3, "draw", reason="No winner"),
+            game(4, "timeout", reason="Forge game clock expired"),
+            game(5, "failed", reason="Engine error"),
+            absent,
+        ]
+        payload, rows, markdown = self.render(run={**RUN, "requested_games": 6, "goal_seat": 1}, games=games)
+
+        self.assertEqual(payload["run"]["goal_seat"], 1)
+        self.assertEqual(len(rows), 6)
+        self.assertIn("## Goal deck · Ramp\n\nCommander · Seat 1 · test", markdown)
+        self.assertIn("| **33.3%** | **1** | 1 | 1 | 3 |", markdown)
+        self.assertIn("🟩 `01 W` · 🟥 `02 L` · 🟨 `03 D` · ⏱️ `04 T` · ⚠️ `05 F` · ⬜ `06 —`", markdown)
+        self.assertIn("W win · L loss · D draw · T timeout · F failed · — deck absent", markdown)
+        self.assertIn("| **Ramp** | `███░░░░░░░` 33.3% | 1 | 1 | 1 | 3 |", markdown)
+        self.assertLess(markdown.index("| Aggro |"), markdown.index("| **Ramp** |"))
+        self.assertIn("<summary>Game results and logs</summary>", markdown)
+        self.assertIn("[stdout](games/05/simulation.stdout.log)", markdown)
 
     def test_setup_failure_still_writes_three_reports_with_zero_attempts(self):
-        run = {**RUN, "batch_error": "Deck validation failed"}
+        run = {**RUN, "batch_error": "Deck validation failed", "goal_seat": 3}
         payload, rows, markdown = self.render(run=run, decks=[], games=[])
 
         self.assertEqual(payload["counts"]["requested"], 4)
@@ -90,14 +114,19 @@ class BatchReportTests(unittest.TestCase):
         self.assertEqual(payload["counts"]["completed"], 0)
         self.assertEqual(payload["decks"], [])
         self.assertEqual(rows, [])
-        self.assertIn("- Batch error: Deck validation failed", markdown)
+        self.assertIn("## Goal deck · Seat 3\n\nDeck details unavailable.", markdown)
+        self.assertIn("> Deck validation failed", markdown)
+        self.assertIn("| **0 / 4** | 0 | 0 | 0 | 0 | 31.5 s |", markdown)
         self.assertIn("[setup](logs/setup.log)", markdown)
 
     def test_zero_completed_games_has_unavailable_win_rate(self):
-        payload, _, markdown = self.render(games=[game(1, "failed", reason="Invalid deck")])
+        payload, _, markdown = self.render(
+            run={**RUN, "goal_seat": 1}, games=[game(1, "failed", reason="Invalid deck")],
+        )
 
         self.assertTrue(all(deck["win_rate"] is None for deck in payload["decks"]))
-        self.assertIn("| 0 | 0 | 0 | 0 | unavailable |", markdown)
+        self.assertIn("| **Unavailable** | **0** | 0 | 0 | 0 |", markdown)
+        self.assertIn("| **Ramp** | Unavailable | 0 | 0 | 0 | 0 |", markdown)
 
     def test_csv_escapes_formula_text_and_markdown_escapes_deck_markup(self):
         decks = [{**DECKS[0], "name": "=SUM(1,2)|<unsafe>[deck]"}, *DECKS[1:]]
