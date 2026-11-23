@@ -1,20 +1,21 @@
 # Plan
 
-Preserve Stage C report archiving on protected main by preparing each report on its own branch for a checked pull request.
+Publish the verified Stage B batch runner as a manual GitHub Actions workflow and archive the Markdown report from each attempt.
 
 ## Scope
 
-- In: the isolated archive job, report publisher, real-Git tests, and Stage C guides. Keep reports in the existing archive path after merge.
-- Out: simulation execution, dispatch inputs, new credentials, Actions-wide PR creation/approval settings, and automatic report merges.
+- Stage C covers manual runs of one to ten games, artifact uploads, and a Git-tracked archive in the public repository.
+- Rehearse the workflow on a temporary branch. GitHub enables the permanent dispatch after the workflow reaches the default branch.
 
 ## Action items
 
-- [x] Inspect verified Stage C behavior, actual GitHub repository settings, and the required-check conflict with its direct main push.
-- [x] Prepare the report on a unique run/attempt branch. Validate reused branches and never force-push or write directly to main.
-- [x] Publish a link in the job summary so the owner can open a normal pull request with CI Verify.
-- [x] Update the README, archive guide, specification, and rehearsal notes to distinguish the new path from previous direct-push evidence.
-- [x] Exercise real disposable Git remotes for branch isolation, identical retries, conflicts, and concurrent publication. Run the full suite, static workflow validation, and a synthetic execution of the archive shell step without running Forge.
-- [ ] Open the stacked PR, run hosted verification and both reviews, and document the integration order with the CI and Stage C PRs.
+- [x] Add the manual workflow with pinned Ubuntu tooling, input validation before Forge setup, and timeouts that preserve time to upload evidence.
+- [x] Upload the reports and logs for each attempt, including failed batches. Give a separate archive job permission to publish only the generated Markdown summary.
+- [x] Write reports to the existing run ID and attempt paths. Test idempotency, existing summary protection, missing summaries, and concurrent Git pushes with disposable repositories.
+- [x] Keep the actual Forge deck validation error in the archived summary, as well as the raw diagnostic log.
+- [x] Check workflow syntax and run the full unittest suite. Rehearse the ten-game path, reruns, and failure handling on hosted Ubuntu using an isolated archive branch.
+- [x] Document dispatch, reruns and artifact retention in the README and archive guide. Record the hosted evidence in the specification and verification notes. [Hosted verification](Stage-C-Verification.md)
+- [x] Prepare the verified feature branch for publication and pull request review.
 
 ## Open questions
 
