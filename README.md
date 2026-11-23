@@ -6,7 +6,16 @@ Stage A passed on GitHub-hosted Ubuntu with Forge 2.0.16 and Temurin 17. Azorius
 
 - [Project specification v0.1](PROJECT_SPEC.md)
 - [Stage A feasibility review and smoke test plan](docs/Stage-A-Feasibility.md)
+- [Stage C hosted verification](docs/Stage-C-Verification.md)
 - [Simulation run reports](reports/runs/README.md)
+
+## Run a hosted Commander batch
+
+1. Open **Actions → Commander batch simulation → Run workflow** in GitHub. Select **main** and enter a whole number from **1 to 10**. The default is 10. GitHub makes the new dispatch available once the workflow is on the default branch.
+2. Open the run and download its `commander-batch-<run-id>-attempt-<attempt>` artifact. Start with `batch/summary.md`. The artifact also contains the CSV, JSON, and raw logs.
+3. Find the Git-tracked copy at `reports/runs/<run-id>/attempt-<attempt>/summary.md` on `main`. Use **Re-run all jobs** to repeat a batch. Download any artifact you want to keep before rerunning. The rerun uploads a new artifact and adds a summary folder.
+
+The hosted batch uses the four checked-in Stage A decks in fixture order, starting with seed 42. For a failure, check the artifact's `run.txt` for rejected inputs, `forge-setup.log` for installation errors, or the batch summary and its log links for deck validation and gameplay failures. Generated summaries are archived even when gameplay fails.
 
 ## Run the Stage A smoke test
 
@@ -17,7 +26,7 @@ On failure, check `forge-setup.log` for download, checksum, or extraction errors
 
 The fast **CI Verify** job runs on pushes to `main` and every pull request targeting `main`, including docs-only changes. Use `bash -n scripts/setup_forge.sh` and `python3 -B -m unittest discover -s tests -v` for the same checks locally. Forge installation and gameplay run only through **Run workflow**.
 
-## Run the Stage B batch
+## Run the batch CLI locally
 
 On Ubuntu with Python 3.10+, Java 17, and GNU `/usr/bin/time`, run these commands from the repository root. The setup script verifies the pinned Forge archive.
 

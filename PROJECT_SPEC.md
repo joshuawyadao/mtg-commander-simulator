@@ -1,7 +1,7 @@
 # MTG Commander Simulation Framework
 ## Project Specification — v0.1
 
-**Status:** Stage B verified on GitHub-hosted Ubuntu\
+**Status:** Stage C rehearsed on GitHub-hosted Ubuntu\
 **Target environment:** Public GitHub repository + GitHub Actions  
 **Primary technologies:** Java, Forge MTG, Python  
 **Development workflow:** Codex  
@@ -400,4 +400,4 @@ The generic PoC is complete when a public GitHub repository contains a reproduci
 
 ---
 
-**Project status:** Stage B verified. See the [ten-game hosted evidence](docs/Stage-B-Verification.md).
+**Project status:** Stage C rehearsed. See the [hosted workflow and archive evidence](docs/Stage-C-Verification.md).
