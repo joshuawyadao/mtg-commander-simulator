@@ -1,19 +1,20 @@
 # Plan
 
-Make the generated Markdown a skimmable dashboard centered on the designated goal deck and the outcomes of its games.
+Put the designated testing deck's observed pros and cons next to its record so readers can skim what went well and where it struggled.
 
 ## Scope
 
-- Extend Phase 2 PR #6 with a GitHub-renderable Markdown dashboard and goal seat selection.
-- Use archived Phase 2 data to review the dashboard layout. Keep the existing archived summaries as the original run evidence.
+- In: The goal deck section of generated Markdown and its documentation in README.md and PROJECT_SPEC.md.
+- Out: New gameplay telemetry, historical archive rewrites, and structured export changes.
 
 ## Action items
 
-- [x] Make the alternate deck the default goal for the two Phase 2 lineups and allow an explicit goal-seat override from the CLI and Actions.
-- [x] Put the goal deck, win rate, outcomes by game, opponent results, and batch health at the top of the Markdown. Retain settings, deck hashes, individual game details, and log links.
-- [x] Test goal selection, missing decks, zero completions, wins, losses, draws, timeouts, and failures. Verify shell syntax, workflow lint, and the full test suite.
-- [x] Review the rendered output on historical Phase 2 results and run a hosted smoke check of selection, reporting, and archiving.
-- [x] Document the dashboard and goal selection. Track CI and review on [PR #6](https://github.com/joshuawyadao/mtg-commander-simulator/pull/6).
+- [x] Check the available evidence in the goal deck record and the per-game outcomes.
+- [ ] Add a compact pros and cons table before the outcome strip. Show where the goal finished by win count and who won most often in its losses.
+- [ ] Cover ties, winless and lossless batches, no completed games, and games without the goal deck in the report tests.
+- [ ] Update README.md and PROJECT_SPEC.md to explain what the takeaways measure.
+- [ ] Run the report tests and the full suite. Re-render both verified ten-game lineups and check the GitHub Markdown output.
+- [ ] Push to the Phase 2 branch and confirm CI and review on PR #6.
 
 ## Open questions
 
