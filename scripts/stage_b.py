@@ -64,14 +64,14 @@ def read_java_version(forge_dir, output_dir):
     return next((line for line in lines if "Runtime Environment" in line), version)
 
 
-def prepare_decks(original_paths, work_dir, jar, output_dir):
+def prepare_decks(original_paths, work_dir, jar, output_dir, *, deck_root):
     deck_dir = work_dir / "decks"
     deck_dir.mkdir()
     staged_paths = []
     for seat, path in enumerate(original_paths, start=1):
         # Forge resolves basenames within one directory. Give each staged copy its own name.
         staged = deck_dir / f"seat-{seat}.dck"
-        shutil.copyfile(path, staged)
+        shutil.copyfile(deck_root / path, staged)
         staged_paths.append(staged)
 
     preflight_home = work_dir / "preflight-home"
@@ -84,7 +84,7 @@ def prepare_decks(original_paths, work_dir, jar, output_dir):
             **fixture,
             "file": str(original),
             "seat": seat,
-            "archetype": FIXTURE_ARCHETYPES.get(original.resolve()),
+            "archetype": FIXTURE_ARCHETYPES.get((deck_root / original).resolve()),
             "ai_profile": "Forge default",
         })
     return staged_paths, decks
@@ -148,7 +148,7 @@ def run_batch(args, output_dir):
         run["java_version"] = read_java_version(jar.parent, output_dir)
         with tempfile.TemporaryDirectory(prefix="forge-stage-b-") as temp:
             work_dir = Path(temp)
-            paths, decks = prepare_decks(args.decks, work_dir, jar, output_dir)
+            paths, decks = prepare_decks(args.decks, work_dir, jar, output_dir, deck_root=args.deck_root)
             deck_names = [deck["name"] for deck in decks]
             for game in range(1, args.games + 1):
                 result = play_game(
@@ -191,9 +191,10 @@ def main(argv=None):
         parser.error("deadlines must be positive, with the process deadline above the game clock")
     if args.lineup is not None:
         args.decks = LINEUPS[args.lineup]
+    args.deck_root = forge.ROOT if args.lineup is not None else Path.cwd()
     try:
         for path in args.decks:
-            if path.suffix.lower() != ".dck" or not path.is_file():
+            if path.suffix.lower() != ".dck" or not (args.deck_root / path).is_file():
                 parser.error(f"expected an existing Forge .dck file: {path}")
         output_dir = args.output_dir.resolve()
         output_dir.mkdir(parents=True)

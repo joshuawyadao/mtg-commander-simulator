@@ -3,7 +3,10 @@ import csv
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -49,14 +52,19 @@ class BatchTests(unittest.TestCase):
                     "decks/stage-a/ramp.dck", "decks/stage-a/aggro.dck", candidate, "decks/stage-a/control.dck",
                 ))
 
-    def test_reports_name_the_selected_lineup_even_when_setup_fails(self):
-        args = [
-            "--forge-dir", str(self.root / "missing"), "--output-dir", str(self.output), "--lineup", "spellslinger",
-        ]
-        with contextlib.redirect_stderr(io.StringIO()):
-            self.assertEqual(stage_b.main(args), 1)
+    def test_preset_from_another_directory_reports_selected_lineup_when_setup_fails(self):
+        result = subprocess.run(
+            [
+                sys.executable, "-B", "-m", "scripts.stage_b", "--lineup", "spellslinger",
+                "--forge-dir", str(self.root / "missing"), "--output-dir", str(self.output),
+            ],
+            cwd=self.root, env={**os.environ, "PYTHONPATH": str(stage_b.forge.ROOT)},
+            capture_output=True, text=True, check=False,
+        )
+        self.assertEqual(result.returncode, 1, result.stderr)
         report = json.loads((self.output / "results.json").read_text())
         self.assertEqual(report["run"]["lineup"], "spellslinger")
+        self.assertIn("Expected one Forge desktop JAR", report["run"]["batch_error"])
         self.assertIn("- Lineup: spellslinger", (self.output / "summary.md").read_text())
 
     def test_rejects_unknown_lineup_or_both_deck_selections(self):

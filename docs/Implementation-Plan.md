@@ -15,7 +15,7 @@ Validate the Commander batch workflow with graveyard recursion and spellslinger 
 - [x] Run both alternate lineups on hosted Ubuntu. Verify ten attempts per lineup, check that the intended mechanics resolve in the raw logs, and compare each archived Markdown report with its artifact. [Hosted verification](Phase-2-Verification.md)
 - [x] Update the README and roadmap status, record the hosted evidence, and retain both archived summaries in Git.
 - [x] Prepare the verified feature branch for publication and pull request review.
-- [ ] Anchor named presets to the repository so they select the same checked-in decks when the CLI starts from another directory.
+- [x] Anchor named presets to the repository so they select the same checked-in decks when the CLI starts from another directory.
 
 ## Open questions
 
