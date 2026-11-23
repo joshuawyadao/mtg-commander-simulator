@@ -1,22 +1,20 @@
 # Plan
 
-Turn the verified Stage A game into a reusable four-player Commander batch and verify ten attempts on hosted Ubuntu.
+Publish the verified Stage B batch runner as a manual GitHub Actions workflow and archive the Markdown report from each attempt.
 
 ## Scope
 
-- Stage B includes a Python CLI, four Forge-native decks per run, sequential execution, CSV, JSON and Markdown reports, automated tests, and one hosted verification run.
-- Stage C delivers the permanent workflow and Git archive described in the reporting requirements.
+- Stage C covers manual runs of one to ten games, artifact uploads, and a Git-tracked archive in the public repository.
+- Rehearse the workflow on a temporary branch. GitHub enables the permanent dispatch after the workflow reaches the default branch.
 
 ## Action items
 
-- [x] Reuse the pinned Forge setup, Java deck validation, process logging, and result parsing from Stage A. Preserve the single-game smoke command and evidence format.
-- [x] Add a batch CLI for deck paths, game count, seed, and deadlines. Validate a staged copy of each deck, then run one isolated Forge process per game and keep raw diagnostics for each attempt.
-- [x] Generate the three report formats from the same result records. Report verified wins, genuine draws, timeouts, and failures individually, and exclude timeouts and failures from deck win rates.
-- [x] Test invalid configuration, mixed results, setup failure, and report consistency. Run the targeted batch suite, full unittest discovery, shell syntax check, and diff checks.
-- [x] Fix the recovered AI decision timeout misclassified by the first hosted batch. Replay the captured game 8 logs and test that genuine game timeouts and unrelated exceptions still fail.
-- [x] Document the command, report outputs, and troubleshooting in the README. Update the specification and hosted evidence after the ten-game run.
-- [x] Verify ten attempts on hosted Ubuntu with the pinned toolchain. Download and reconcile the reports against the raw game logs. [Hosted verification](Stage-B-Verification.md)
-- [x] Record the hosted evidence and restore the one-game dispatch before publishing the pull request.
+- [ ] Add the manual workflow with pinned Ubuntu tooling, input validation before Forge setup, and timeouts that preserve time to upload evidence.
+- [ ] Upload the reports and logs for each attempt, including failed batches. Give a separate archive job permission to publish only the generated Markdown summary.
+- [ ] Write reports to the existing run ID and attempt paths. Test idempotency, existing summary protection, missing summaries, and concurrent Git pushes with disposable repositories.
+- [ ] Check workflow syntax and run the full unittest suite. Rehearse the ten-game path, reruns, and failure handling on hosted Ubuntu using an isolated archive branch.
+- [ ] Document dispatch, reruns and artifact retention in the README and archive guide. Record the hosted evidence in the specification and verification notes.
+- [ ] Publish the feature branch and open the pull request for CI and review.
 
 ## Open questions
 
