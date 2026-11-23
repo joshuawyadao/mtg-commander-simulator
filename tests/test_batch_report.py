@@ -81,6 +81,7 @@ class BatchReportTests(unittest.TestCase):
         self.assertIn("[stdout](games/03/simulation.stdout.log)", markdown)
         self.assertIn("| **2 / 4** | 4 | 1 | 1 | 1 | 31.5 s |", markdown)
         self.assertNotIn("## Goal deck", markdown)
+        self.assertNotIn("### Pros and cons", markdown)
 
     def test_goal_dashboard_distinguishes_game_outcomes_and_compares_decks(self):
         absent = {**game(6, "won", "Aggro"), "seats": ["Aggro", "Midrange", "Control"]}
@@ -98,12 +99,52 @@ class BatchReportTests(unittest.TestCase):
         self.assertEqual(len(rows), 6)
         self.assertIn("## Goal deck · Ramp\n\nCommander · Seat 1 · test", markdown)
         self.assertIn("| **33.3%** | **1** | 1 | 1 | 3 |", markdown)
+        self.assertLess(markdown.index("### Pros and cons"), markdown.index("### Game-by-game"))
+        self.assertIn(
+            "| Tied for the lead with **1** win. | **Aggro** won **1 of 1** games the goal deck lost. |",
+            markdown,
+        )
         self.assertIn("🟩 `01 W` · 🟥 `02 L` · 🟨 `03 D` · ⏱️ `04 T` · ⚠️ `05 F` · ⬜ `06 —`", markdown)
         self.assertIn("W win · L loss · D draw · T timeout · F failed · — deck absent", markdown)
         self.assertIn("| **Ramp** | `███░░░░░░░` 33.3% | 1 | 1 | 1 | 3 |", markdown)
         self.assertLess(markdown.index("| Aggro |"), markdown.index("| **Ramp** |"))
         self.assertIn("<summary>Game results and logs</summary>", markdown)
         self.assertIn("[stdout](games/05/simulation.stdout.log)", markdown)
+
+    def test_winless_takeaways_show_all_most_frequent_opposing_winners(self):
+        renamed = "Aggro | <attack>"
+        decks = [DECKS[0], {**DECKS[1], "name": renamed}, *DECKS[2:]]
+        games = [
+            {**game(number, "won", winner), "seats": [deck["name"] for deck in decks]}
+            for number, winner in enumerate((renamed, "Control", "Midrange", renamed, "Control"), 1)
+        ]
+        _, _, markdown = self.render(run={**RUN, "requested_games": 5, "goal_seat": 1}, decks=decks, games=games)
+
+        self.assertIn(
+            "| No wins in **5** completed games. | **Aggro &#124; &lt;attack&gt;, Control** tied for the most "
+            "wins in goal-deck losses (**2 each**). |",
+            markdown,
+        )
+
+    def test_takeaways_report_a_table_lead_and_distinguish_lossless_from_draw_only(self):
+        for outcomes, expected in (
+            (["Ramp", "Ramp"], "Led the lineup with **2** wins."),
+            ([None, None], "No wins in **2** completed games."),
+        ):
+            with self.subTest(outcomes=outcomes):
+                games = [game(number, "won" if winner else "draw", winner) for number, winner in enumerate(outcomes, 1)]
+                _, _, markdown = self.render(run={**RUN, "requested_games": 2, "goal_seat": 1}, games=games)
+
+                self.assertIn(f"| {expected} | No losses in completed games. |", markdown)
+
+    def test_takeaways_credit_wins_without_claiming_a_lead(self):
+        games = [game(number, "won", winner) for number, winner in enumerate(("Ramp", "Aggro", "Aggro"), 1)]
+        _, _, markdown = self.render(run={**RUN, "requested_games": 3, "goal_seat": 1}, games=games)
+
+        self.assertIn(
+            "| Recorded **1** win in this batch. | **Aggro** won **2 of 2** games the goal deck lost. |",
+            markdown,
+        )
 
     def test_setup_failure_still_writes_three_reports_with_zero_attempts(self):
         run = {**RUN, "batch_error": "Deck validation failed", "goal_seat": 3}
@@ -126,6 +167,8 @@ class BatchReportTests(unittest.TestCase):
 
         self.assertTrue(all(deck["win_rate"] is None for deck in payload["decks"]))
         self.assertIn("| **Unavailable** | **0** | 0 | 0 | 0 |", markdown)
+        self.assertIn("### Pros and cons\n\nNo completed games for the goal deck yet.", markdown)
+        self.assertNotIn("| Pros | Cons |", markdown)
         self.assertIn("| **Ramp** | Unavailable | 0 | 0 | 0 | 0 |", markdown)
 
     def test_csv_escapes_formula_text_and_markdown_escapes_deck_markup(self):

@@ -24,7 +24,7 @@ The three lineups use Green Ramp, Red Aggro, and Azorius Control in seats one, t
 | `graveyard-recursion` | Golgari Graveyard Recursion, led by Meren of Clan Nel Toth |
 | `spellslinger` | Mono-Blue Spellslinger, led by Talrand, Sky Summoner |
 
-With `auto`, the dashboard highlights the new deck in seat three for `graveyard-recursion` and `spellslinger`. The baseline opens with batch health and deck standings. Pick a seat to show that deck's win rate, record, and game-by-game results first. Expand **Game results and logs** to see who won each game and open its diagnostics.
+With `auto`, the dashboard highlights the new deck in seat three for `graveyard-recursion` and `spellslinger`. The baseline opens with batch health and deck standings. Pick a seat to show that deck's win rate, record, pros and cons, and game-by-game results first. The takeaways show whether the deck led the lineup in wins and who won most often in its losses. They use completed games that included the goal deck. Expand **Game results and logs** to see who won each game and open its diagnostics.
 
 For a failure, check the artifact's `run.txt` for rejected inputs, `forge-setup.log` for installation errors, or the batch summary and its log links for deck validation and gameplay failures. Generated summaries are archived even when gameplay fails.
 

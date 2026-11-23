@@ -242,7 +242,7 @@ The implementation must translate configuration into the actual supported Forge 
 ### Markdown Run Report
 
 - **Run summary.** Record the start time with time zone, run ID and attempt, workflow run URL, source commit, Forge and Java versions, settings, total runtime, and counts of attempted games, completions, draws, timeouts, and failures.
-- **Goal deck dashboard.** Highlight the designated seat with its win rate, record, and game-by-game outcomes. The alternate lineups default to seat three and the run can explicitly select any seat.
+- **Goal deck dashboard.** Highlight the designated seat with its win rate, record, pros and cons, and game-by-game outcomes. Use completed games that included the goal deck to summarize its win count relative to its opponents and identify the most frequent winners in its losses. The alternate lineups default to seat three and the run can explicitly select any seat.
 - **Deck results.** Record each deck's name, version, archetype, AI profile, completed games played, wins, losses, draws, and win rate. Divide wins by completed games played and show the rate as unavailable when that count is zero. Surface timeouts and failures in batch health and in the game details.
 - **Game results.** Record the seats, seed, runtime, and winner, draw, timeout, or failure for each attempt. Include the path of each available raw log within the downloadable artifact.
 

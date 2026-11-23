@@ -1,5 +1,6 @@
 """Write human-readable and structured reports for a Commander simulation batch."""
 
+from collections import Counter
 import csv
 from html import escape
 import json
@@ -57,6 +58,37 @@ def _goal_outcome(game, goal_name):
     return game["status"]
 
 
+def _goal_takeaways(goal, games):
+    heading = ["### Pros and cons", ""]
+    completed = goal["completed_games"]
+    if not completed:
+        return [*heading, "No completed games for the goal deck yet.", ""]
+
+    opponent_wins = Counter(game["winner"] for game in games if _goal_outcome(game, goal["name"]) == "loss")
+    most = max(opponent_wins.values(), default=0)
+    wins = goal["wins"]
+    win_label = f"**{wins}** {'win' if wins == 1 else 'wins'}"
+    if not wins:
+        pro = f"No wins in **{completed}** completed {'game' if completed == 1 else 'games'}."
+    elif wins > most:
+        pro = f"Led the lineup with {win_label}."
+    elif wins == most:
+        pro = f"Tied for the lead with {win_label}."
+    else:
+        pro = f"Recorded {win_label} in this batch."
+
+    leaders = sorted(name for name, count in opponent_wins.items() if count == most)
+    if not leaders:
+        con = "No losses in completed games."
+    elif len(leaders) == 1:
+        con = f"**{_markdown(leaders[0])}** won **{most} of {goal['losses']}** games the goal deck lost."
+    else:
+        names = ", ".join(_markdown(name) for name in leaders)
+        con = f"**{names}** tied for the most wins in goal-deck losses (**{most} each**)."
+
+    return [*heading, "| Pros | Cons |", "| --- | --- |", f"| {pro} | {con} |", ""]
+
+
 def _goal_lines(goal, games):
     rate = goal["win_rate"]
     rate_label = f"{rate:.1%}" if rate is not None else "Unavailable"
@@ -71,6 +103,7 @@ def _goal_lines(goal, games):
         f"| **{rate_label}** | **{goal['wins']}** | {goal['losses']} | {goal['draws']} | {goal['completed_games']} |",
         "",
     ]
+    lines.extend(_goal_takeaways(goal, games))
     if games:
         markers = []
         present = set()
