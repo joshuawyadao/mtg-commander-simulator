@@ -1,7 +1,6 @@
 """Render a matched-seed A/B dashboard from two batch results artifacts."""
 
 import argparse
-from html import escape
 import json
 import os
 from pathlib import Path
@@ -10,6 +9,7 @@ import sys
 import tempfile
 from urllib.parse import urlsplit
 
+from .batch_report import _markdown as _md
 from .comparison_data import build_comparison
 
 
@@ -18,14 +18,6 @@ OUTCOME = {
     "failed": "⚠️ Failed", "timeout": "⏱️ Timeout", "missing": "⬜ Missing",
 }
 RUN_PATH = re.compile(r"/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/actions/runs/([0-9]+)/?")
-
-
-def _md(value):
-    """Escape untrusted artifact text in Markdown, tables, and HTML details."""
-    if value is None:
-        return "—"
-    value = escape(str(value).replace("\r", " ").replace("\n", " "))
-    return re.sub(r"[\[\]*_`\\~!|]", lambda match: f"&#{ord(match[0])};", value)
 
 
 def _number(value):

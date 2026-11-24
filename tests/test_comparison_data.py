@@ -52,6 +52,7 @@ class ComparisonDataTests(unittest.TestCase):
             game(b, 3, status="draw", seen=telemetry(None, 4, 4, 0)),
             game(b, 5, status="failed", reason="Forge error"),
         ]
+        a["games"][3].pop("winner")
 
         comparison = build_comparison(a, b)
         self.assertEqual(set(comparison), {"runs", "decks", "goal_seat", "pairs",
