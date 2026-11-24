@@ -84,12 +84,13 @@ class GameTelemetryTests(unittest.TestCase):
         lines = [
             f"Turn: Turn 1 ({GOAL})",
             f"Add To Stack: {GOAL} cast Meren of Clan Nel Toth's Familiar",
+            f"Turn: Turn 2 ({CONTROL})",
             f"Add To Stack: {GOAL} cast Meren of Clan Nel Toth targeting Ai(4)-Azorius Control",
         ]
 
         telemetry = parse_telemetry(game_log(*lines), DECKS)
 
-        self.assertEqual(telemetry[2]["first_commander_cast_turn"], 1)
+        self.assertEqual(telemetry[2]["first_commander_cast_turn"], 2)
 
 
 if __name__ == "__main__":
