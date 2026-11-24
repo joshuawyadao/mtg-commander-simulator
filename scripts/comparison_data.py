@@ -119,9 +119,10 @@ def _pair_side(game, goal, version):
     if game is None:
         return {"outcome": "missing", "winner": None, "reason": None, "telemetry": None}
     status = game["status"]
-    outcome = ("win" if game["winner"] == goal["name"] else "loss") if status == "won" else status
+    winner = game.get("winner")
+    outcome = ("win" if winner == goal["name"] else "loss") if status == "won" else status
     telemetry = _telemetry(game, goal["seat"], f"Version {version}, seed {game['seed']}") if outcome in COMPLETED else None
-    return {"outcome": outcome, "winner": game["winner"],
+    return {"outcome": outcome, "winner": winner,
             "reason": game.get("reason"), "telemetry": telemetry}
 
 
