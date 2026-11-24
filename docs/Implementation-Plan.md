@@ -15,8 +15,8 @@ Use Forge game logs to add three per-seat gameplay metrics and show the designat
 - [x] Add a compact goal deck summary and per-game telemetry to the report.
 - [x] Cover incomplete logs, rotating active players, and the reporting contract. Run unit tests and shell checks.
 - [x] Update the README and project spec with units, eligibility, and limitations.
-- [ ] Run a one-game smoke check and then a ten-game hosted batch for each preset. Compare the generated report branches with their artifacts and preserve the verified dashboards on the feature branch.
-- [ ] Open the Phase 3 pull request and verify CI and review.
+- [x] Run a one-game smoke check and then a ten-game hosted batch for each preset. Compare the generated report branches with their artifacts and preserve the verified dashboards on the feature branch.
+- [x] Prepare the Phase 3 pull request. The GitHub pull request tracks CI and review.
 
 ## Open questions
 
