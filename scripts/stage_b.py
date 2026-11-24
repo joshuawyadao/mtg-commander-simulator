@@ -19,15 +19,18 @@ MAX_SEED = 2**63 - 1
 MAX_CLOCK = 2**31 - 1
 BASELINE_DECKS = tuple(Path("decks/stage-a", name) for name in forge.FIXTURES)
 RECURSION_DECK = Path("decks/phase-2/graveyard-recursion.dck")
+RECURSION_EXTRA_SWAMP_DECK = Path("decks/phase-4/meren-extra-swamp.dck")
 SPELLSLINGER_DECK = Path("decks/phase-2/spellslinger.dck")
 LINEUPS = {
     "baseline": BASELINE_DECKS,
     # Each alternate replaces midrange in seat three.
     "graveyard-recursion": (*BASELINE_DECKS[:2], RECURSION_DECK, BASELINE_DECKS[3]),
+    "meren-extra-swamp": (*BASELINE_DECKS[:2], RECURSION_EXTRA_SWAMP_DECK, BASELINE_DECKS[3]),
     "spellslinger": (*BASELINE_DECKS[:2], SPELLSLINGER_DECK, BASELINE_DECKS[3]),
 }
 GOAL_SEAT_BY_LINEUP = {
     "graveyard-recursion": 3,
+    "meren-extra-swamp": 3,
     "spellslinger": 3,
 }
 FIXTURE_ARCHETYPES = {
@@ -36,6 +39,7 @@ FIXTURE_ARCHETYPES = {
     forge.ROOT / "decks/stage-a/midrange.dck": "Midrange",
     forge.ROOT / "decks/stage-a/control.dck": "Control",
     forge.ROOT / RECURSION_DECK: "Graveyard recursion",
+    forge.ROOT / RECURSION_EXTRA_SWAMP_DECK: "Graveyard recursion",
     forge.ROOT / SPELLSLINGER_DECK: "Spellslinger",
 }
 LOG_SUFFIXES = {

@@ -1,3 +1,4 @@
+from collections import Counter
 import contextlib
 import csv
 import hashlib
@@ -39,6 +40,7 @@ class BatchTests(unittest.TestCase):
             "baseline": ("decks/stage-a/midrange.dck", None),
             "graveyard-recursion": ("decks/phase-2/graveyard-recursion.dck", 3),
             "spellslinger": ("decks/phase-2/spellslinger.dck", 3),
+            "meren-extra-swamp": ("decks/phase-4/meren-extra-swamp.dck", 3),
         }
         for lineup, (candidate, goal_seat) in candidates.items():
             with self.subTest(lineup=lineup), patch("scripts.stage_b.run_batch", return_value=0) as run:
@@ -52,6 +54,23 @@ class BatchTests(unittest.TestCase):
                 self.assertEqual(tuple(map(str, parsed.decks)), (
                     "decks/stage-a/ramp.dck", "decks/stage-a/aggro.dck", candidate, "decks/stage-a/control.dck",
                 ))
+
+    def test_meren_variant_exchanges_rise_from_the_grave_for_a_swamp(self):
+        def read_deck(path):
+            head, main = (stage_b.forge.ROOT / path).read_text(encoding="utf-8").split("[Main]\n")
+            cards = Counter()
+            for line in main.splitlines():
+                quantity, name = line.split(" ", 1)
+                cards[name] += int(quantity)
+            return head.split("[Commander]\n")[1], cards
+
+        original_commander, original = read_deck(stage_b.RECURSION_DECK)
+        variant_commander, variant = read_deck(stage_b.RECURSION_EXTRA_SWAMP_DECK)
+        self.assertEqual(variant_commander, original_commander)
+        self.assertEqual(sum(original.values()), 99)
+        self.assertEqual(sum(variant.values()), 99)
+        self.assertEqual(original - variant, Counter({"Rise from the Grave": 1}))
+        self.assertEqual(variant - original, Counter({"Swamp": 1}))
 
     def test_explicit_goal_seat_overrides_preset_and_supports_custom_decks(self):
         for selection_number, deck_selection in enumerate((

@@ -9,7 +9,7 @@ Compare two Meren deck versions using the same pod and seed schedule, then archi
 
 ## Action items
 
-- [ ] Add B as a selectable preset and verify the exact one-card difference.
+- [x] Add B as a selectable preset and verify the exact one-card difference.
 - [ ] Build a comparator for two batch JSON reports and reject incompatible settings, opponents, and seed schedules.
 - [ ] Render paired outcomes and telemetry with sample counts and no-data states. Test compatibility checks, incomplete pairs, and the dashboard.
 - [ ] Add a manual comparison workflow that reads existing artifacts and uses the checked report-branch archive process.
