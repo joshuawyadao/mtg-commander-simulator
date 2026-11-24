@@ -1,7 +1,7 @@
 # MTG Commander Simulation Framework
 ## Project Specification — v0.1
 
-**Status:** Phase 3 telemetry verified on GitHub-hosted Ubuntu\
+**Status:** Phase 4 Meren comparison verified on GitHub-hosted Ubuntu\
 **Target environment:** Public GitHub repository + GitHub Actions  
 **Primary technologies:** Java, Forge MTG, Python  
 **Development workflow:** Codex  
@@ -344,7 +344,7 @@ Validate graveyard recursion and spellslinger against three fixed baseline oppon
 Start with the first logged commander cast, early land plays, and combat damage taken. Further board state, token generation, combat, and resource-development metrics depend on reliable evidence from Forge.
 
 ### Phase 4 — Deck Version Comparison
-Compare two versions against consistent opponents and configurations.
+Compare two versions using matched seeds and the same goal seat, opponents, AI profiles, engine, and simulation settings. Show paired win rates and telemetry deltas with explicit denominators and a seed-level audit trail. Archive the comparison through the report review process. The first comparison replaces Rise from the Grave with an additional Swamp in the Meren deck.
 
 ### Phase 5 — Strategic Evaluation
 Investigate AI decision quality and deck-specific playstyle metrics.
@@ -401,4 +401,4 @@ The generic PoC is complete when a public GitHub repository contains a reproduci
 
 ---
 
-**Project status:** First Phase 3 metrics verified. See the [hosted telemetry and archive evidence](docs/Phase-3-Verification.md).
+**Project status:** First Phase 4 comparison verified. See the [hosted runs and archive evidence](docs/Phase-4-Verification.md).

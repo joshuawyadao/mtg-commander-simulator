@@ -1,23 +1,21 @@
 # Plan
 
-Use Forge game logs to add three per-seat gameplay metrics and show the designated deck's results in the Markdown dashboard.
+Compare two Meren deck versions using the same pod and seed schedule, then archive a dashboard backed by both hosted runs.
 
 ## Scope
 
-- In: first commander cast by game turn, land plays during the seat's first four turns, and combat damage taken by that player.
-- In: additive game telemetry in JSON, the goal deck's dashboard, and hosted verification of all three presets.
-- Out: new Forge instrumentation, token and board-state metrics, changes to earlier archives, and changes to the production workflow.
+- In: The existing Meren deck as A, a version B that replaces Rise from the Grave with one Swamp, a Markdown A/B dashboard, and hosted comparison and archiving.
+- Out: Additional deck changes, larger batches, and edits to past archives.
 
 ## Action items
 
-- [x] Check the pinned Forge event format and the retained Phase 2 logs.
-- [x] Parse the three metrics independently of game outcome classification. Distinguish a confirmed zero or no cast from unavailable evidence.
-- [x] Add a compact goal deck summary and per-game telemetry to the report.
-- [x] Cover incomplete logs, rotating active players, and the reporting contract. Run unit tests and shell checks.
-- [x] Update the README and project spec with units, eligibility, and limitations.
-- [x] Run a one-game smoke check and then a ten-game hosted batch for each preset. Compare the generated report branches with their artifacts and preserve the verified dashboards on the feature branch.
-- [x] Prepare the Phase 3 pull request. The GitHub pull request tracks CI and review.
-- [x] Address the Brooks review finding by checking that a same-prefix spell on an earlier turn does not count as the commander cast.
+- [x] Add B as a selectable preset and verify the exact one-card difference.
+- [x] Build a comparator for two batch JSON reports and reject incompatible settings, opponents, and seed schedules.
+- [x] Render paired outcomes and telemetry with sample counts and no-data states. Test compatibility checks, incomplete pairs, and the dashboard.
+- [x] Add a manual comparison workflow that reads existing artifacts and uses the checked report-branch archive process.
+- [x] Document the comparison inputs, metric denominators, and archive path.
+- [x] Verify one hosted game per version, then two ten-game batches and a byte-identical hosted comparison archive.
+- [x] Prepare the feature PR with the verified comparison. The GitHub PR tracks CI and review.
 
 ## Open questions
 

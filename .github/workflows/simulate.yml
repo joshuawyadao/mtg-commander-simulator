@@ -13,6 +13,7 @@ on:
           - baseline
           - graveyard-recursion
           - spellslinger
+          - meren-extra-swamp
       games:
         description: Number of games (1 to 10)
         required: true
