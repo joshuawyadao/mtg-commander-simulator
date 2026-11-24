@@ -17,6 +17,7 @@ Use Forge game logs to add three per-seat gameplay metrics and show the designat
 - [x] Update the README and project spec with units, eligibility, and limitations.
 - [x] Run a one-game smoke check and then a ten-game hosted batch for each preset. Compare the generated report branches with their artifacts and preserve the verified dashboards on the feature branch.
 - [x] Prepare the Phase 3 pull request. The GitHub pull request tracks CI and review.
+- [x] Address the Brooks review finding by checking that a same-prefix spell on an earlier turn does not count as the commander cast.
 
 ## Open questions
 
