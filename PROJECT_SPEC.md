@@ -243,6 +243,7 @@ The implementation must translate configuration into the actual supported Forge 
 
 - **Run summary.** Record the start time with time zone, run ID and attempt, workflow run URL, source commit, Forge and Java versions, settings, total runtime, and counts of attempted games, completions, draws, timeouts, and failures.
 - **Goal deck dashboard.** Highlight the designated seat with its win rate, record, pros and cons, and game-by-game outcomes. Use completed games that included the goal deck to summarize its win count relative to its opponents and identify the most frequent winners in its losses. The alternate lineups default to seat three and the run can explicitly select any seat.
+- **Gameplay telemetry.** For completed games with recognized Forge logs, record each seat's first logged commander cast on the game turn number, land plays during its own first four turns, the number of those turns observed, and combat damage taken by the player. Show goal deck coverage and per-game values. Calculate the early-land median using games where the seat reached its fourth turn. Omit unavailable telemetry from aggregates and preserve recorded zero values.
 - **Deck results.** Record each deck's name, version, archetype, AI profile, completed games played, wins, losses, draws, and win rate. Divide wins by completed games played and show the rate as unavailable when that count is zero. Surface timeouts and failures in batch health and in the game details.
 - **Game results.** Record the seats, seed, runtime, and winner, draw, timeout, or failure for each attempt. Include the path of each available raw log within the downloadable artifact.
 
@@ -254,7 +255,6 @@ Upload the Markdown summary, CSV and JSON exports, and available raw logs togeth
 
 ### Future Metrics
 
-- Commander casting turn
 - Land and mana development
 - Creatures and tokens on battlefield
 - Damage dealt and received
@@ -341,7 +341,7 @@ Run ten Commander games in GitHub Actions.
 Validate graveyard recursion and spellslinger against three fixed baseline opponents. Both new lineups completed ten hosted games and produced Git-tracked summaries. [Phase 2 verification](docs/Phase-2-Verification.md)
 
 ### Phase 3 — Detailed Telemetry
-Collect board state, token generation, combat, and resource-development metrics.
+Start with the first logged commander cast, early land plays, and combat damage taken. Further board state, token generation, combat, and resource-development metrics depend on reliable evidence from Forge.
 
 ### Phase 4 — Deck Version Comparison
 Compare two versions against consistent opponents and configurations.

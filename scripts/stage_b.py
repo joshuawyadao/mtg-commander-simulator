@@ -12,6 +12,7 @@ import time
 
 from . import stage_a as forge
 from .batch_report import write_reports
+from .game_telemetry import parse_telemetry
 
 
 MAX_SEED = 2**63 - 1
@@ -94,22 +95,24 @@ def prepare_decks(original_paths, work_dir, jar, output_dir, *, deck_root):
     return staged_paths, decks
 
 
-def play_game(game, seed, deck_names, jar, paths, work_dir, output_dir, game_clock, process_deadline):
+def play_game(game, seed, decks, jar, paths, work_dir, output_dir, game_clock, process_deadline):
     name = f"game-{game:04d}"
     game_dir = output_dir / name
     home = work_dir / name
     start = time.monotonic()
     process = None
+    telemetry = None
+    deck_names = [deck["name"] for deck in decks]
     try:
         game_dir.mkdir()
         home.mkdir()
         command = forge.commander_command(forge.headless_java(home), jar, paths, seed, game_clock)
         process = forge.run_logged(command, jar.parent, game_dir, "simulation", process_deadline)
-        result = forge.parse_game(
-            forge.read_log(game_dir / "simulation.stdout.log"),
-            forge.read_log(game_dir / "simulation.stderr.log"),
-            process, deck_names, seed,
-        )
+        stdout = forge.read_log(game_dir / "simulation.stdout.log")
+        stderr = forge.read_log(game_dir / "simulation.stderr.log")
+        result = forge.parse_game(stdout, stderr, process, deck_names, seed)
+        if result.status in {"won", "draw"}:
+            telemetry = parse_telemetry(stdout, decks)
     except OSError as exc:
         result = forge.GameResult("failed", reason=str(exc))
     return {
@@ -117,6 +120,7 @@ def play_game(game, seed, deck_names, jar, paths, work_dir, output_dir, game_clo
         "seed": seed,
         "seats": deck_names,
         **asdict(result),
+        "telemetry": telemetry,
         "wall_seconds": process.wall_seconds if process else round(time.monotonic() - start, 3),
         "returncode": process.returncode if process else None,
         "peak_rss_kib": process.peak_rss_kib if process else None,
@@ -154,10 +158,9 @@ def run_batch(args, output_dir):
         with tempfile.TemporaryDirectory(prefix="forge-stage-b-") as temp:
             work_dir = Path(temp)
             paths, decks = prepare_decks(args.decks, work_dir, jar, output_dir, deck_root=args.deck_root)
-            deck_names = [deck["name"] for deck in decks]
             for game in range(1, args.games + 1):
                 result = play_game(
-                    game, args.seed + game - 1, deck_names, jar, paths, work_dir, output_dir,
+                    game, args.seed + game - 1, decks, jar, paths, work_dir, output_dir,
                     args.game_clock_seconds, args.process_deadline_seconds,
                 )
                 games.append(result)

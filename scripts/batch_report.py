@@ -6,7 +6,10 @@ from html import escape
 import json
 from pathlib import Path
 import re
+from statistics import median
 from urllib.parse import quote
+
+from .game_telemetry import EARLY_TURN_LIMIT
 
 
 CSV_FIELDS = (
@@ -89,6 +92,63 @@ def _goal_takeaways(goal, games):
     return [*heading, "| Pros | Cons |", "| --- | --- |", f"| {pro} | {con} |", ""]
 
 
+def _goal_telemetry(game, goal):
+    if game["status"] not in ("won", "draw") or goal["name"] not in game["seats"]:
+        return None
+    return next((entry for entry in game.get("telemetry") or [] if entry["seat"] == goal["seat"]), None)
+
+
+def _telemetry_lines(goal, games):
+    eligible = [game for game in games if game["status"] in ("won", "draw") and goal["name"] in game["seats"]]
+    records = [entry for game in eligible if (entry := _goal_telemetry(game, goal)) is not None]
+    heading = ["### How the deck played", ""]
+    if not records:
+        return [*heading, "Telemetry unavailable for this batch.", ""]
+
+    casts = [entry["first_commander_cast_turn"] for entry in records
+             if entry["first_commander_cast_turn"] is not None]
+    full_windows = [
+        entry["early_land_plays"] for entry in records if entry["early_turns_observed"] == EARLY_TURN_LIMIT
+    ]
+    cast_median = f"Turn {median(casts):g} (median)" if casts else "No casts observed"
+    lands_median = f"{median(full_windows):g} plays (median)" if full_windows else "Unavailable"
+    damage_median = f"{median(entry['combat_damage_taken'] for entry in records):g} damage"
+
+    return [
+        *heading,
+        f"Telemetry from **{len(records)} of {len(eligible)}** completed games with the goal deck.", "",
+        "| Metric | Result | Games measured |",
+        "| --- | ---: | ---: |",
+        f"| Commander cast | **{len(casts)} of {len(records)}** games | {len(records)} |",
+        f"| First commander cast | **{cast_median}** | {len(casts)} casts |",
+        f"| Land plays in first {EARLY_TURN_LIMIT} own turns | **{lands_median}** | {len(full_windows)} with "
+        f"{EARLY_TURN_LIMIT} turns |",
+        f"| Combat damage taken | **{damage_median}** (median) | {len(records)} |",
+        "",
+    ]
+
+
+def _telemetry_details(goal, games):
+    lines = [
+        "<details>", "<summary>Goal deck telemetry by game</summary>", "",
+        "| Game | Result | First commander cast | Land plays / own turns | Combat damage taken |",
+        "| ---: | --- | --- | ---: | ---: |",
+    ]
+    for game in games:
+        entry = _goal_telemetry(game, goal)
+        if entry is None:
+            first_cast = lands = damage = "Unavailable"
+        else:
+            turn = entry["first_commander_cast_turn"]
+            first_cast = f"Turn {turn}" if turn is not None else "No cast"
+            lands = f"{entry['early_land_plays']} / {entry['early_turns_observed']} (of first {EARLY_TURN_LIMIT})"
+            damage = str(entry["combat_damage_taken"])
+        lines.append(
+            f"| {game['game']} | {_goal_outcome(game, goal['name'])} | {first_cast} | {lands} | {damage} |"
+        )
+    return [*lines, "", "</details>", ""]
+
+
 def _goal_lines(goal, games):
     rate = goal["win_rate"]
     rate_label = f"{rate:.1%}" if rate is not None else "Unavailable"
@@ -104,6 +164,7 @@ def _goal_lines(goal, games):
         "",
     ]
     lines.extend(_goal_takeaways(goal, games))
+    lines.extend(_telemetry_lines(goal, games))
     if games:
         markers = []
         present = set()
@@ -250,6 +311,9 @@ def render_markdown(run, counts, decks, games):
                 f"`{_markdown(deck['version'])}` |"
             )
     lines.extend(["", "</details>", ""])
+
+    if goal is not None and games:
+        lines.extend(_telemetry_details(goal, games))
 
     if games:
         lines.extend([

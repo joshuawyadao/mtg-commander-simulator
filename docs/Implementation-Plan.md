@@ -11,10 +11,10 @@ Use Forge game logs to add three per-seat gameplay metrics and show the designat
 ## Action items
 
 - [x] Check the pinned Forge event format and the retained Phase 2 logs.
-- [ ] Parse the three metrics independently of game outcome classification. Distinguish a confirmed zero or no cast from unavailable evidence.
-- [ ] Add a compact goal deck summary and per-game telemetry to the report.
-- [ ] Cover incomplete logs, rotating active players, and the reporting contract. Run unit tests and shell checks.
-- [ ] Update the README and project spec with units, eligibility, and limitations.
+- [x] Parse the three metrics independently of game outcome classification. Distinguish a confirmed zero or no cast from unavailable evidence.
+- [x] Add a compact goal deck summary and per-game telemetry to the report.
+- [x] Cover incomplete logs, rotating active players, and the reporting contract. Run unit tests and shell checks.
+- [x] Update the README and project spec with units, eligibility, and limitations.
 - [ ] Run a one-game smoke check and then a ten-game hosted batch for each preset. Compare the generated report branches with their artifacts and preserve the verified dashboards on the feature branch.
 - [ ] Open the Phase 3 pull request and verify CI and review.
 
