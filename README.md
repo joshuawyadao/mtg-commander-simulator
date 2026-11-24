@@ -18,19 +18,35 @@ Stage A passed on GitHub-hosted Ubuntu with Forge 2.0.16 and Temurin 17. Azorius
 3. Follow **Open the archive pull request** in the Actions run summary. Open the PR, review the report, and wait for **CI Verify** before merging. The merged copy lives at `reports/runs/<run-id>/attempt-<attempt>/summary.md` on `main`.
 4. Use **Re-run all jobs** to repeat a batch. Download any artifact you want to keep before rerunning. The rerun uploads a new artifact and prepares its own summary branch.
 
-The three lineups use Green Ramp, Red Aggro, and Azorius Control in seats one, two, and four. Games start with seed 42.
+The lineups use Green Ramp, Red Aggro, and Azorius Control in seats one, two, and four. Games start with seed 42.
 
 | Lineup | Seat three |
 | --- | --- |
 | `baseline` | Orzhov Midrange |
 | `graveyard-recursion` | Golgari Graveyard Recursion, led by Meren of Clan Nel Toth |
 | `spellslinger` | Mono-Blue Spellslinger, led by Talrand, Sky Summoner |
+| `meren-extra-swamp` | Meren A/B version B, with one extra Swamp |
 
-With `auto`, the dashboard highlights the new deck in seat three for `graveyard-recursion` and `spellslinger`. The baseline opens with batch health and deck standings. Pick a seat to show that deck's win rate, record, pros and cons, and game-by-game results first. The takeaways show whether the deck led the lineup in wins and who won most often in its losses. They use completed games that included the goal deck. Expand **Game results and logs** to see who won each game and open its diagnostics.
+With `auto`, the dashboard highlights the deck in seat three for the three alternate presets. The baseline opens with batch health and deck standings. Pick a seat to show that deck's win rate, record, pros and cons, and game-by-game results first. The takeaways show whether the deck led the lineup in wins and who won most often in its losses. They use completed games that included the goal deck. Expand **Game results and logs** to see who won each game and open its diagnostics.
 
 **How the deck played** summarizes three metrics for the selected deck from completed games with usable Forge logs. Commander timing uses the game's turn number for the first logged cast. Early land plays count lands the deck played during its own first four turns. The batch median uses games where the deck reached its fourth turn. Combat damage taken counts damage Forge logged as combat damage to that player. Game-level details show the turns observed, games with no recorded cast, and unavailable data.
 
 For a failure, check the artifact's `run.txt` for rejected inputs, `forge-setup.log` for installation errors, or the batch summary and its log links for deck validation and gameplay failures. The archive job prepares a report branch whenever a summary exists, including after a failed game.
+
+## Compare two deck versions
+
+For the Meren comparison, use `graveyard-recursion` as A and `meren-extra-swamp` as B. B replaces **Rise from the Grave** with **one Swamp**. Dispatch the two batches from the same revision with the same game count and goal seat. A ten-game batch uses seeds 42–51.
+
+Open **Actions → Compare Commander deck versions → Run workflow**, select **main**, and enter the two simulation run IDs and attempt numbers. Find the Markdown in the comparison artifact or use **Open the archive pull request** in the run summary. For local reports, use the same comparator on the two downloaded JSON files.
+
+```bash
+python3 -B -m scripts.compare_reports \
+  --version-a version-a/batch/results.json \
+  --version-b version-b/batch/results.json \
+  --output comparison/summary.md
+```
+
+The comparison checks seat, opponent deck hashes, AI profiles, run settings, and seeds. Each metric shows the number of eligible matched pairs. First-cast timing requires an observed cast in both games, and early land plays require four own turns in both games. Missing, failed, and timed-out attempts are visible in the seed table. Use ten-game comparisons to identify patterns to retest.
 
 ## Run the Stage A smoke test
 

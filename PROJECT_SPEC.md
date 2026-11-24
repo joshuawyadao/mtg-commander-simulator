@@ -344,7 +344,7 @@ Validate graveyard recursion and spellslinger against three fixed baseline oppon
 Start with the first logged commander cast, early land plays, and combat damage taken. Further board state, token generation, combat, and resource-development metrics depend on reliable evidence from Forge.
 
 ### Phase 4 — Deck Version Comparison
-Compare two versions against consistent opponents and configurations.
+Compare two versions using matched seeds and the same goal seat, opponents, AI profiles, engine, and simulation settings. Show paired win rates and telemetry deltas with explicit denominators and a seed-level audit trail. Archive the comparison through the report review process. The first comparison replaces Rise from the Grave with an additional Swamp in the Meren deck.
 
 ### Phase 5 — Strategic Evaluation
 Investigate AI decision quality and deck-specific playstyle metrics.
