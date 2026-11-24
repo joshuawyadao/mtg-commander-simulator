@@ -108,8 +108,67 @@ class BatchReportTests(unittest.TestCase):
         self.assertIn("W win · L loss · D draw · T timeout · F failed · — deck absent", markdown)
         self.assertIn("| **Ramp** | `███░░░░░░░` 33.3% | 1 | 1 | 1 | 3 |", markdown)
         self.assertLess(markdown.index("| Aggro |"), markdown.index("| **Ramp** |"))
+        self.assertIn("### How the deck played\n\nTelemetry unavailable for this batch.", markdown)
         self.assertIn("<summary>Game results and logs</summary>", markdown)
         self.assertIn("[stdout](games/05/simulation.stdout.log)", markdown)
+
+    def test_goal_telemetry_uses_only_completed_games_and_full_early_windows(self):
+        def telemetry(cast, lands, own_turns, damage):
+            return [
+                {"seat": seat, "first_commander_cast_turn": cast if seat == 1 else None,
+                 "early_land_plays": lands if seat == 1 else 0,
+                 "early_turns_observed": own_turns if seat == 1 else 4,
+                 "combat_damage_taken": damage if seat == 1 else 0}
+                for seat in range(1, 5)
+            ]
+
+        absent = {**game(6, "won", "Aggro"), "seats": ["Aggro", "Midrange", "Control"],
+                  "telemetry": telemetry(3, 4, 4, 9)}
+        games = [
+            {**game(1, "won", "Ramp"), "telemetry": telemetry(4, 3, 4, 0)},
+            {**game(2, "won", "Aggro"), "telemetry": telemetry(None, 0, 4, 6)},
+            {**game(3, "draw"), "telemetry": telemetry(8, 1, 2, 4)},
+            game(4, "won", "Control"),
+            {**game(5, "timeout"), "telemetry": telemetry(3, 4, 4, 99)},
+            absent,
+        ]
+        payload, rows, markdown = self.render(run={**RUN, "requested_games": 6, "goal_seat": 1}, games=games)
+
+        self.assertEqual(len(payload["games"][0]["telemetry"]), 4)
+        self.assertEqual(payload["games"][0]["telemetry"][0]["combat_damage_taken"], 0)
+        self.assertNotIn("telemetry", rows[0])
+        self.assertIn("Telemetry from **3 of 4** completed games with the goal deck.", markdown)
+        self.assertIn("| Commander cast | **2 of 3** games | 3 |", markdown)
+        self.assertIn("| First commander cast | **Turn 6 (median)** | 2 casts |", markdown)
+        self.assertIn("| Land plays in first 4 own turns | **1.5 plays (median)** | 2 with 4 turns |", markdown)
+        self.assertIn("| Combat damage taken | **4 damage** (median) | 3 |", markdown)
+        self.assertLess(markdown.index("### Pros and cons"), markdown.index("### How the deck played"))
+        self.assertLess(markdown.index("### How the deck played"), markdown.index("### Game-by-game"))
+        self.assertIn("<summary>Goal deck telemetry by game</summary>", markdown)
+        self.assertIn("| 1 | win | Turn 4 | 3 / 4 (of first 4) | 0 |", markdown)
+        self.assertIn("| 2 | loss | No cast | 0 / 4 (of first 4) | 6 |", markdown)
+        self.assertIn("| 3 | draw | Turn 8 | 1 / 2 (of first 4) | 4 |", markdown)
+        self.assertIn("| 4 | loss | Unavailable | Unavailable | Unavailable |", markdown)
+        self.assertIn("| 5 | timeout | Unavailable | Unavailable | Unavailable |", markdown)
+        self.assertIn("| 6 | absent | Unavailable | Unavailable | Unavailable |", markdown)
+
+    def test_telemetry_distinguishes_no_cast_and_short_games_from_missing_data(self):
+        available = [
+            {"seat": 1, "first_commander_cast_turn": None,
+             "early_land_plays": 0, "early_turns_observed": 2, "combat_damage_taken": 0},
+        ]
+        _, _, markdown = self.render(
+            run={**RUN, "requested_games": 2, "goal_seat": 1},
+            games=[{**game(1, "won", "Aggro"), "telemetry": available}, game(2, "failed")],
+        )
+
+        self.assertIn("Telemetry from **1 of 1** completed games with the goal deck.", markdown)
+        self.assertIn("| Commander cast | **0 of 1** games | 1 |", markdown)
+        self.assertIn("| First commander cast | **No casts observed** | 0 casts |", markdown)
+        self.assertIn("| Land plays in first 4 own turns | **Unavailable** | 0 with 4 turns |", markdown)
+        self.assertIn("| Combat damage taken | **0 damage** (median) | 1 |", markdown)
+        self.assertIn("| 1 | loss | No cast | 0 / 2 (of first 4) | 0 |", markdown)
+        self.assertIn("| 2 | failed | Unavailable | Unavailable | Unavailable |", markdown)
 
     def test_winless_takeaways_show_all_most_frequent_opposing_winners(self):
         renamed = "Aggro | <attack>"

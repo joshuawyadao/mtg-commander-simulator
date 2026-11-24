@@ -8,6 +8,7 @@ Stage A passed on GitHub-hosted Ubuntu with Forge 2.0.16 and Temurin 17. Azorius
 - [Stage A feasibility review and smoke test plan](docs/Stage-A-Feasibility.md)
 - [Stage C hosted verification](docs/Stage-C-Verification.md)
 - [Phase 2 lineup verification](docs/Phase-2-Verification.md)
+- [Phase 3 telemetry verification](docs/Phase-3-Verification.md)
 - [Simulation run reports](reports/runs/README.md)
 
 ## Run a hosted Commander batch
@@ -26,6 +27,8 @@ The three lineups use Green Ramp, Red Aggro, and Azorius Control in seats one, t
 | `spellslinger` | Mono-Blue Spellslinger, led by Talrand, Sky Summoner |
 
 With `auto`, the dashboard highlights the new deck in seat three for `graveyard-recursion` and `spellslinger`. The baseline opens with batch health and deck standings. Pick a seat to show that deck's win rate, record, pros and cons, and game-by-game results first. The takeaways show whether the deck led the lineup in wins and who won most often in its losses. They use completed games that included the goal deck. Expand **Game results and logs** to see who won each game and open its diagnostics.
+
+**How the deck played** summarizes three metrics for the selected deck from completed games with usable Forge logs. Commander timing uses the game's turn number for the first logged cast. Early land plays count lands the deck played during its own first four turns. The batch median uses games where the deck reached its fourth turn. Combat damage taken counts damage Forge logged as combat damage to that player. Game-level details show the turns observed, games with no recorded cast, and unavailable data.
 
 For a failure, check the artifact's `run.txt` for rejected inputs, `forge-setup.log` for installation errors, or the batch summary and its log links for deck validation and gameplay failures. The archive job prepares a report branch whenever a summary exists, including after a failed game.
 
@@ -53,7 +56,7 @@ python3 -B -m scripts.stage_b \
 Use `--decks` with four paths for a custom lineup, and add `--goal-seat 1` through `--goal-seat 4` to highlight a deck in the dashboard. Each deck needs a distinct name, one commander, and 99 main-deck cards in Forge-native format. The CLI validates a snapshot of the decks and records their SHA-256 hashes. Seating follows input order, and each game increments the seed by one. The default Forge clock is 600 seconds, with a separate 720-second process deadline. Set them with `--game-clock-seconds` and `--process-deadline-seconds`.
 
 - **`summary.md`** opens with the dashboard. Expand the details for run settings, deck versions, and raw log links.
-- **`results.json`** contains the complete structured results. **`results.csv`** has one row per attempt, with JSON-encoded seats and log paths.
+- **`results.json`** contains the complete structured results. Each game's `telemetry` is a list of records identified by seat, or `null` when gameplay telemetry is unavailable. Within a telemetry record, a `null` first cast means Forge logged no matching cast. **`results.csv`** has one row per attempt, with JSON-encoded seats and log paths.
 - **`game-0001/`**, **`game-0002/`**, and later folders hold each game's stdout, stderr, and available peak memory measurements. Batch-level Java and deck-validation logs sit beside the reports.
 
 Wins and genuine draws count as completed games. Timeouts and failures stay out of deck win rates. The CLI writes reports and exits with status 1 for a setup error, timeout, or failed game. Check the batch error and setup logs for preflight failures, and the per-game reason and logs for gameplay failures. Use a fresh output directory for each run.

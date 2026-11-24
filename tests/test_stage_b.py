@@ -131,6 +131,15 @@ class BatchTests(unittest.TestCase):
                 seed = int(command[command.index("-s") + 1])
                 winner = seats[0] if seed == 42 else seats[3]
                 stdout = f"{' vs '.join(seats)} - one game of Commander seed {seed}\n"
+                if seed in {42, 43}:
+                    stdout += (
+                        f"Turn: Turn 1 ({seats[0]})\n"
+                        f"Land: {seats[0]} played Forest (1)\n"
+                        f"Add To Stack: {seats[0]} cast Commander 1\n"
+                        f"Turn: Turn 2 ({seats[1]})\n"
+                        f"Damage: Attacker (2) deals 3 combat damage to {seats[0]}.\n"
+                        "Game Outcome: Turn 1\n"
+                    )
                 for seat in seats:
                     outcome = "won" if seed not in {43, 45} and seat == winner else "lost"
                     stdout += f"Game Outcome: {seat} has {outcome}\n"
@@ -170,6 +179,15 @@ class BatchTests(unittest.TestCase):
         self.assertEqual([game["status"] for game in report["games"]], ["won", "timeout", "failed", "draw", "won"])
         self.assertEqual(report["games"][1]["reason"], "Forge game clock expired")
         self.assertEqual(report["games"][2]["reason"], "cannot start the game")
+        telemetry = report["games"][0]["telemetry"]
+        self.assertEqual([entry["seat"] for entry in telemetry], [1, 2, 3, 4])
+        self.assertEqual(telemetry[0], {
+            "seat": 1, "first_commander_cast_turn": 1, "early_land_plays": 1,
+            "early_turns_observed": 1, "combat_damage_taken": 3,
+        })
+        self.assertEqual([game["telemetry"] for game in report["games"][1:]], [None] * 4)
+        with (self.output / "results.csv").open(newline="", encoding="utf-8") as stream:
+            self.assertNotIn("telemetry", csv.DictReader(stream).fieldnames)
         failure_log = self.output / report["games"][2]["logs"]["stderr"]
         self.assertEqual(failure_log.read_text(), "launch diagnostics")
         self.assertEqual(report["games"][4]["winner"], "Deck 4")
