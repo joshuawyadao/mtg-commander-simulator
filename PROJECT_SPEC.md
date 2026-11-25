@@ -347,7 +347,7 @@ Start with the first logged commander cast, early land plays, and combat damage 
 Compare two versions using matched seeds and the same goal seat, opponents, AI profiles, engine, and simulation settings. Show paired win rates and telemetry deltas with explicit denominators and a seed-level audit trail. Archive the comparison through the report review process. The first comparison replaces Rise from the Grave with an additional Swamp in the Meren deck.
 
 ### Phase 5 — Strategic Evaluation
-Investigate AI decision quality and deck-specific playstyle metrics.
+Start with Meren's targeted end-step recursion. Record the turn, target, matching resolution, and the return destination when same-card log evidence supports it. Show coverage, timing, and numbered log examples in the goal deck dashboard. Use hand-reviewed seed logs to document visible strategic tradeoffs and gaps in the decision context.
 
 ### Phase 6 — Optional Optimization
 Suggest card changes based on collected evidence, with human approval before modifying decklists.

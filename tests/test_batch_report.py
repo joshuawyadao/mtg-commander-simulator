@@ -5,6 +5,7 @@ import tempfile
 import unittest
 
 from scripts.batch_report import write_reports
+from scripts.meren_recursion import MEREN
 
 
 RUN = {
@@ -169,6 +170,74 @@ class BatchReportTests(unittest.TestCase):
         self.assertIn("| Combat damage taken | **0 damage** (median) | 1 |", markdown)
         self.assertIn("| 1 | loss | No cast | 0 / 2 (of first 4) | 0 |", markdown)
         self.assertIn("| 2 | failed | Unavailable | Unavailable | Unavailable |", markdown)
+
+    def test_merens_recursion_scorecard_separates_observed_zero_unknown_and_unavailable(self):
+        decks = [{**DECKS[0], "commander": MEREN}, *DECKS[1:]]
+        def event(turn, target, trigger, resolution=None, destination=None, destination_line=None):
+            return {"turn": turn, "target": target, "trigger_line": trigger, "resolution_line": resolution,
+                    "destination": destination, "destination_line": destination_line}
+        games = [
+            {**game(1, "won", "Ramp"), "meren_recursion": [{"seat": 1, "events": [
+                event(4, "Sakura-Tribe Elder", 100, 101, "battlefield", 103),
+                event(8, "Shriekmaw", 200, 201),
+            ]}]},
+            {**game(2, "draw"), "meren_recursion": [{"seat": 1, "events": []}]},
+            {**game(3, "won", "Aggro"), "meren_recursion": [{"seat": 1, "events": [
+                event(6, "Plaguecrafter", 300), event(9, "Sakura-Tribe Elder", 400, 401),
+            ]}]},
+            game(4, "won", "Control"),
+            {**game(5, "timeout"), "meren_recursion": [{"seat": 1, "events": [
+                event(1, "Excluded", 1, 2, "battlefield", 3),
+            ]}]},
+        ]
+        payload, _, markdown = self.render(
+            run={**RUN, "requested_games": 5, "goal_seat": 1}, decks=decks, games=games,
+        )
+
+        self.assertEqual(payload["games"][1]["meren_recursion"][0]["events"], [])
+        self.assertIn("Observed in **3 of 4** completed games with Meren.", markdown)
+        self.assertIn("| Games with targeted triggers | **2 of 3** observed |", markdown)
+        self.assertIn("| First targeted trigger (Forge game turn) | **Turn 5 (median)** across 2 games |", markdown)
+        self.assertIn("| Targets | **4** |", markdown)
+        self.assertIn("| Matched resolutions | **3** |", markdown)
+        self.assertIn("| Confirmed battlefield returns | **1** |", markdown)
+        self.assertIn("| Resolved, destination unknown | **2** |", markdown)
+        self.assertIn("| Resolution unconfirmed | **1** |", markdown)
+        self.assertIn("including returns to hand", markdown)
+        self.assertNotIn("Confirmed hand", markdown)
+        self.assertLess(markdown.index("### How the deck played"), markdown.index("### Meren recursion"))
+        self.assertLess(markdown.index("### Meren recursion"), markdown.index("### Game-by-game"))
+        self.assertIn("| 1 · 42 | 4 | Sakura-Tribe Elder | Returned to battlefield | "
+                      "[stdout](games/01/simulation.stdout.log) · L100, L101, L103 |", markdown)
+        self.assertIn("| 3 · 44 | 9 | Sakura-Tribe Elder | Resolved, destination unknown | "
+                      "[stdout](games/03/simulation.stdout.log) · L400, L401 |", markdown)
+        self.assertIn("| 3 · 44 | 6 | Plaguecrafter | Resolution unconfirmed | "
+                      "[stdout](games/03/simulation.stdout.log) · L300 |", markdown)
+        self.assertNotIn("Excluded", markdown)
+
+    def test_merens_recursion_reports_zero_targets_and_missing_coverage(self):
+        decks = [{**DECKS[0], "commander": MEREN}, *DECKS[1:]]
+        _, _, zero = self.render(
+            run={**RUN, "goal_seat": 1}, decks=decks,
+            games=[{**game(1, "draw"), "meren_recursion": [{"seat": 1, "events": []}]}],
+        )
+        self.assertIn("Observed in **1 of 1** completed games with Meren.", zero)
+        self.assertIn("| Targets | **0** |", zero)
+        self.assertIn("No targeted triggers were logged in the observed games.", zero)
+        _, _, missing = self.render(
+            run={**RUN, "goal_seat": 1}, decks=decks, games=[game(1, "won", "Ramp")],
+        )
+        self.assertIn("Observed in **0 of 1** completed games with Meren.", missing)
+        self.assertIn("Recursion data unavailable for these games.", missing)
+        self.assertNotIn("| Targets | **0** |", missing)
+
+    def test_recursion_section_only_appears_for_designated_merens_deck(self):
+        decks = [{**DECKS[0], "commander": MEREN}, *DECKS[1:]]
+        sample = {**game(1, "won", "Ramp"), "meren_recursion": [{"seat": 1, "events": []}]}
+        _, _, other_goal = self.render(run={**RUN, "goal_seat": 2}, decks=decks, games=[sample])
+        _, _, no_goal = self.render(decks=decks, games=[sample])
+        self.assertNotIn("### Meren recursion", other_goal)
+        self.assertNotIn("### Meren recursion", no_goal)
 
     def test_winless_takeaways_show_all_most_frequent_opposing_winners(self):
         renamed = "Aggro | <attack>"

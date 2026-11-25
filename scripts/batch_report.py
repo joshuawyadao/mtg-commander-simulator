@@ -10,6 +10,7 @@ from statistics import median
 from urllib.parse import quote
 
 from .game_telemetry import EARLY_TURN_LIMIT
+from .meren_recursion import MEREN
 
 
 CSV_FIELDS = (
@@ -149,6 +150,98 @@ def _telemetry_details(goal, games):
     return [*lines, "", "</details>", ""]
 
 
+def _meren_record(game, goal):
+    if game["status"] not in ("won", "draw") or goal["name"] not in game["seats"]:
+        return None
+    return next((entry for entry in game.get("meren_recursion") or [] if entry["seat"] == goal["seat"]), None)
+
+
+def _recursion_status(event):
+    if event["resolution_line"] is None:
+        return "Resolution unconfirmed"
+    if event["destination"] == "battlefield":
+        return "Returned to battlefield"
+    return "Resolved, destination unknown"
+
+
+def _recursion_examples(records):
+    """Favor distinct games and show both a confirmed and an unknown result when available."""
+    candidates = [
+        (game, event) for game, record in records for event in record["events"]
+    ]
+    chosen = []
+    used_games = set()
+    for predicate in (
+        lambda event: event["destination"] == "battlefield",
+        lambda event: event["resolution_line"] is not None and event["destination"] is None,
+        lambda event: event["resolution_line"] is None,
+    ):
+        match = next((item for item in candidates if predicate(item[1]) and item[0]["game"] not in used_games), None)
+        if match is None:
+            match = next((item for item in candidates if predicate(item[1]) and item not in chosen), None)
+        if match is not None and match not in chosen:
+            chosen.append(match)
+            used_games.add(match[0]["game"])
+    for item in candidates:
+        if len(chosen) == 3:
+            break
+        if item not in chosen and item[0]["game"] not in used_games:
+            chosen.append(item)
+            used_games.add(item[0]["game"])
+    for item in candidates:
+        if len(chosen) == 3:
+            break
+        if item not in chosen:
+            chosen.append(item)
+    return chosen
+
+
+def _meren_lines(goal, games):
+    if goal.get("commander") != MEREN:
+        return []
+    eligible = [game for game in games if game["status"] in ("won", "draw") and goal["name"] in game["seats"]]
+    records = [(game, record) for game in eligible if (record := _meren_record(game, goal)) is not None]
+    lines = ["### Meren recursion", "", f"Observed in **{len(records)} of {len(eligible)}** completed games with Meren.", ""]
+    if not records:
+        return [*lines, "Recursion data unavailable for these games.", ""]
+
+    events = [event for _, record in records for event in record["events"]]
+    games_with_targets = sum(bool(record["events"]) for _, record in records)
+    first_turns = [min(event["turn"] for event in record["events"]) for _, record in records if record["events"]]
+    first_label = f"Turn {median(first_turns):g} (median)" if first_turns else "No targeted triggers observed"
+    matched = sum(event["resolution_line"] is not None for event in events)
+    battlefield = sum(event["destination"] == "battlefield" for event in events)
+    unknown = sum(event["resolution_line"] is not None and event["destination"] is None for event in events)
+    lines.extend([
+        "| Logged target evidence | Result |", "| --- | ---: |",
+        f"| Games with targeted triggers | **{games_with_targets} of {len(records)}** observed |",
+        f"| First targeted trigger (Forge game turn) | **{first_label}** across {games_with_targets} games |",
+        f"| Targets | **{len(events)}** |",
+        f"| Matched resolutions | **{matched}** |",
+        f"| Confirmed battlefield returns | **{battlefield}** |",
+        f"| Resolved, destination unknown | **{unknown}** |",
+        f"| Resolution unconfirmed | **{len(events) - matched}** |",
+        "", "Forge's logs can leave the return destination unknown, including returns to hand.", "",
+    ])
+    examples = _recursion_examples(records)
+    if not examples:
+        return [*lines, "No targeted triggers were logged in the observed games.", ""]
+    lines.extend([
+        "#### Log examples", "",
+        "| Game · seed | Turn | Target | Observed result | Raw stdout lines |",
+        "| --- | ---: | --- | --- | --- |",
+    ])
+    for game, event in examples:
+        line_numbers = [event["trigger_line"], event["resolution_line"], event["destination_line"]]
+        refs = ", ".join(f"L{line}" for line in dict.fromkeys(line for line in line_numbers if line is not None))
+        stdout = _log_links({"stdout": game.get("logs", {}).get("stdout")})
+        lines.append(
+            f"| {game['game']} · {_markdown(game['seed'])} | {event['turn']} | {_markdown(event['target'])} | "
+            f"{_recursion_status(event)} | {stdout} · {refs} |"
+        )
+    return [*lines, "", "The workflow run under **Run settings and deck versions** provides the downloadable stdout.", ""]
+
+
 def _goal_lines(goal, games):
     rate = goal["win_rate"]
     rate_label = f"{rate:.1%}" if rate is not None else "Unavailable"
@@ -165,6 +258,7 @@ def _goal_lines(goal, games):
     ]
     lines.extend(_goal_takeaways(goal, games))
     lines.extend(_telemetry_lines(goal, games))
+    lines.extend(_meren_lines(goal, games))
     if games:
         markers = []
         present = set()

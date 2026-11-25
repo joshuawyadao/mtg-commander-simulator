@@ -13,6 +13,7 @@ import time
 from . import stage_a as forge
 from .batch_report import write_reports
 from .game_telemetry import parse_telemetry
+from .meren_recursion import parse_meren_recursion
 
 
 MAX_SEED = 2**63 - 1
@@ -106,6 +107,7 @@ def play_game(game, seed, decks, jar, paths, work_dir, output_dir, game_clock, p
     start = time.monotonic()
     process = None
     telemetry = None
+    meren_recursion = None
     deck_names = [deck["name"] for deck in decks]
     try:
         game_dir.mkdir()
@@ -117,6 +119,8 @@ def play_game(game, seed, decks, jar, paths, work_dir, output_dir, game_clock, p
         result = forge.parse_game(stdout, stderr, process, deck_names, seed)
         if result.status in {"won", "draw"}:
             telemetry = parse_telemetry(stdout, decks)
+            if telemetry is not None:
+                meren_recursion = parse_meren_recursion(stdout, decks)
     except OSError as exc:
         result = forge.GameResult("failed", reason=str(exc))
     return {
@@ -125,6 +129,7 @@ def play_game(game, seed, decks, jar, paths, work_dir, output_dir, game_clock, p
         "seats": deck_names,
         **asdict(result),
         "telemetry": telemetry,
+        "meren_recursion": meren_recursion,
         "wall_seconds": process.wall_seconds if process else round(time.monotonic() - start, 3),
         "returncode": process.returncode if process else None,
         "peak_rss_kib": process.peak_rss_kib if process else None,
