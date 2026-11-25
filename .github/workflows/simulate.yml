@@ -1,5 +1,5 @@
 name: Commander batch simulation
-run-name: Commander batch · ${{ inputs.lineup }} · ${{ inputs.games }} requested
+run-name: Phase 5 verification · ${{ inputs.lineup }} · ${{ inputs.games }} requested
 
 on:
   workflow_dispatch:
@@ -39,7 +39,7 @@ defaults:
     shell: bash
 
 env:
-  ARCHIVE_BRANCH: ${{ github.event.repository.default_branch }}
+  ARCHIVE_BRANCH: codex/phase-5-meren-strategy
 
 jobs:
   simulate:
@@ -63,7 +63,7 @@ jobs:
           printf 'EVIDENCE_DIR=%s\n' "$EVIDENCE_DIR" >> "$GITHUB_ENV"
           printf 'Commit: %s\nRun ID: %s\nAttempt: %s\nRunner OS: %s\nLineup: %s\nRequested games: %s\nGoal seat: %s\n' \
             "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$RUNNER_OS" "$LINEUP" "$GAMES" "$GOAL_SEAT" > "$EVIDENCE_DIR/run.txt"
-          if [[ "$GITHUB_REF" != "refs/heads/$ARCHIVE_BRANCH" ]]; then
+          if [[ "$GITHUB_REF" != "refs/heads/codex/phase-5-rehearsal" ]]; then
             printf 'Select the %s branch to run and archive a batch.\n' "$ARCHIVE_BRANCH" | tee -a "$EVIDENCE_DIR/run.txt" >&2
             exit 2
           fi
@@ -117,7 +117,7 @@ jobs:
     needs: simulate
     if: >-
       ${{ !cancelled() &&
-          github.ref == format('refs/heads/{0}', github.event.repository.default_branch) &&
+          github.ref == 'refs/heads/codex/phase-5-rehearsal' &&
           needs.simulate.outputs.artifact-id != '' &&
           needs.simulate.outputs.summary-attempt != '' }}
     permissions:
