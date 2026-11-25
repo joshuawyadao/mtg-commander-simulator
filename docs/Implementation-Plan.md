@@ -14,8 +14,8 @@ Use four hand-reviewed Meren games to define evidence-backed recursion metrics a
 - [x] Add a strategy scorecard and representative examples to the Meren goal-deck dashboard. Preserve per-game evidence in JSON.
 - [x] Test uncertain or interrupted evidence, chronological matching, and the batch/report integration.
 - [x] Document metric definitions and confirm the parser against the hand-reviewed samples.
-- [ ] Verify a hosted smoke game, then a ten-game batch and its Markdown archive.
-- [ ] Open the feature PR with the verified archive and finish CI and review.
+- [x] Verify a hosted smoke game, then a ten-game batch and its Markdown archive.
+- [x] Prepare the feature PR with the verified archive. The GitHub PR tracks CI and review.
 
 ## Open questions
 
