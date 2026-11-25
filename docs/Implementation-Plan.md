@@ -1,21 +1,21 @@
 # Plan
 
-Compare two Meren deck versions using the same pod and seed schedule, then archive a dashboard backed by both hosted runs.
+Use four hand-reviewed Meren games to define evidence-backed recursion metrics and publish a verified strategy dashboard.
 
 ## Scope
 
-- In: The existing Meren deck as A, a version B that replaces Rise from the Grave with one Swamp, a Markdown A/B dashboard, and hosted comparison and archiving.
-- Out: Additional deck changes, larger batches, and edits to past archives.
+- In: Both Phase 4 versions on seeds 42 and 47, Meren end-step targets and their logged outcomes, a goal-deck dashboard and log references, and hosted verification of the original Meren lineup.
+- Out: Broad AI scoring, changes to decklists, and changes to earlier archives.
 
 ## Action items
 
-- [x] Add B as a selectable preset and verify the exact one-card difference.
-- [x] Build a comparator for two batch JSON reports and reject incompatible settings, opponents, and seed schedules.
-- [x] Render paired outcomes and telemetry with sample counts and no-data states. Test compatibility checks, incomplete pairs, and the dashboard.
-- [x] Add a manual comparison workflow that reads existing artifacts and uses the checked report-branch archive process.
-- [x] Document the comparison inputs, metric denominators, and archive path.
-- [x] Verify one hosted game per version, then two ten-game batches and a byte-identical hosted comparison archive.
-- [x] Prepare the feature PR with the verified comparison. The GitHub PR tracks CI and review.
+- [x] Review the four Phase 4 logs and record decisions, outcomes, source lines, and gaps in the available context.
+- [x] Parse Meren's targeted end-step trigger and match it to its logged resolution. Report a return destination only when the log supports it.
+- [x] Add a strategy scorecard and representative examples to the Meren goal-deck dashboard. Preserve per-game evidence in JSON.
+- [x] Test uncertain or interrupted evidence, chronological matching, and the batch/report integration.
+- [x] Document metric definitions and confirm the parser against the hand-reviewed samples.
+- [x] Verify a hosted smoke game, then a ten-game batch and its Markdown archive.
+- [x] Prepare the feature PR with the verified archive. The GitHub PR tracks CI and review.
 
 ## Open questions
 

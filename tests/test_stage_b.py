@@ -117,6 +117,7 @@ class BatchTests(unittest.TestCase):
 
     def test_batch_continues_after_timeout_and_launch_error(self):
         names = [f"Deck {seat}" for seat in range(1, 5)]
+        commanders = ["Meren of Clan Nel Toth", "Commander 2", "Commander 3", "Commander 4"]
         seats = [f"Ai({seat})-{name}" for seat, name in enumerate(names, start=1)]
         expected_homes = set()
 
@@ -132,8 +133,8 @@ class BatchTests(unittest.TestCase):
                 self.assertEqual([path.name for path in paths], [f"seat-{seat}.dck" for seat in range(1, 5)])
                 self.assertEqual([path.read_text() for path in paths], [f"deck {seat}" for seat in range(1, 5)])
                 stdout = "\n".join(
-                    f"STAGE_A_DECK\t{path.name}\t{name}\tCommander {seat}"
-                    for seat, (path, name) in enumerate(zip(paths, names), start=1)
+                    f"STAGE_A_DECK\t{path.name}\t{name}\t{commander}"
+                    for path, name, commander in zip(paths, names, commanders, strict=True)
                 )
                 # Subsequent changes to the source files cannot affect the validated batch.
                 Path(self.decks[0]).write_text("changed after validation", encoding="utf-8")
@@ -154,7 +155,12 @@ class BatchTests(unittest.TestCase):
                     stdout += (
                         f"Turn: Turn 1 ({seats[0]})\n"
                         f"Land: {seats[0]} played Forest (1)\n"
-                        f"Add To Stack: {seats[0]} cast Commander 1\n"
+                        f"Add To Stack: {seats[0]} cast {commanders[0]}\n"
+                        f"Phase: {seats[0]}'s End step\n"
+                        f"Add To Stack: {seats[0]} triggered {commanders[0]} targeting [Sakura-Tribe Elder (3)]\n"
+                        "Resolve Stack: At the beginning of your end step, choose target creature card in your "
+                        f"graveyard. (Targeting: [[Sakura-Tribe Elder (3)]]) [Phase: {seats[0]}]\n"
+                        "Zone Change: Sakura-Tribe Elder (3) was put into Graveyard from Battlefield.\n"
                         f"Turn: Turn 2 ({seats[1]})\n"
                         f"Damage: Attacker (2) deals 3 combat damage to {seats[0]}.\n"
                         "Game Outcome: Turn 1\n"
@@ -205,8 +211,15 @@ class BatchTests(unittest.TestCase):
             "early_turns_observed": 1, "combat_damage_taken": 3,
         })
         self.assertEqual([game["telemetry"] for game in report["games"][1:]], [None] * 4)
+        self.assertEqual(report["games"][0]["meren_recursion"], [{"seat": 1, "events": [{
+            "turn": 1, "target": "Sakura-Tribe Elder", "trigger_line": 6, "resolution_line": 7,
+            "destination": "battlefield", "destination_line": 8,
+        }]}])
+        self.assertEqual([game["meren_recursion"] for game in report["games"][1:]], [None] * 4)
         with (self.output / "results.csv").open(newline="", encoding="utf-8") as stream:
-            self.assertNotIn("telemetry", csv.DictReader(stream).fieldnames)
+            fields = csv.DictReader(stream).fieldnames
+            self.assertNotIn("telemetry", fields)
+            self.assertNotIn("meren_recursion", fields)
         failure_log = self.output / report["games"][2]["logs"]["stderr"]
         self.assertEqual(failure_log.read_text(), "launch diagnostics")
         self.assertEqual(report["games"][4]["winner"], "Deck 4")
